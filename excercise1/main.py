@@ -21,25 +21,33 @@ def cleanup_text(text):
     text_in_lowercase = text.lower()
 
     # Remove punctuation
-    def replace_punctuation_with_space(c):
-        return ' ' if c in string.punctuation else c
-    no_punctuation_lowercase_text = ''.join([replace_punctuation_with_space(c) for c in text_in_lowercase])
+    def remove_puncutation(c):
+        return '' if c in string.punctuation else c
 
     # Tokenize text
     blacklisted_words = set(stopwords.words('english'))
-    word_tokens = word_tokenize(no_punctuation_lowercase_text)
+    word_tokens = word_tokenize(text_in_lowercase)
 
     first_chapter = None
     is_chapter = False
     filtered_lowercase_text = []
+    chapters = {}
     for w in word_tokens:
-        if w in blacklisted_words:
+        w = ''.join([remove_puncutation(c) for c in w])
+        if not w or w in blacklisted_words:
             continue
         elif w == 'chapter':
             if first_chapter is None:
                 first_chapter = len(filtered_lowercase_text)
             is_chapter = True
         elif is_chapter:
+            # We expect each chapter to appear at most twice, once in headline and another in text
+            if w not in chapters:
+                chapters[w] = True
+            elif chapters[w] is True:
+                chapters[w] = False
+            else:
+                raise Exception(f'Chapter {w} was encountered more than twice')
             is_chapter = False
         else:
             filtered_lowercase_text.append(w)
@@ -69,7 +77,10 @@ def main():
     elif args.text:
         content = args.text
     cleaned_content = cleanup_text(text=content)
-    print(cleaned_content[:100])
+    letters_frequency = nltk.FreqDist(''.join(cleaned_content))
+    word_frequency = nltk.FreqDist(cleaned_content)
+    print(f'Letter Frequency: {repr(letters_frequency)}')
+    print(f'Word Frequency: {repr(word_frequency)}')
 
 
 if __name__ == '__main__':
