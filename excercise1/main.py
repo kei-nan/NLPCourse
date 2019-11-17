@@ -9,6 +9,11 @@ logging.basicConfig()
 logger = logging.getLogger('exc1')
 
 
+# Cleansup the text by:
+# 1) Moving to lowercase
+# 2) Removes punctuation
+# 3) Tokenizes text
+# 4) Removes header and chapter keywords
 def cleanup_text(text):
     from nltk.corpus import stopwords
     from nltk.tokenize import word_tokenize
