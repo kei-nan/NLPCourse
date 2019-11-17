@@ -81,6 +81,8 @@ def main():
     word_frequency = nltk.FreqDist(cleaned_content)
     print(f'Letter Frequency: {repr(letters_frequency)}')
     print(f'Word Frequency: {repr(word_frequency)}')
+    print(f'Token Count: {len(cleaned_content)}')
+    print(f'Word Type Count: {len(set(cleaned_content))}')
 
 
 if __name__ == '__main__':
