@@ -79,10 +79,14 @@ def main():
     cleaned_content = cleanup_text(text=content)
     letters_frequency = nltk.FreqDist(''.join(cleaned_content))
     word_frequency = nltk.FreqDist(cleaned_content)
+    # not sure about the entropy
+    prob = nltk.MLEProbDist(freqdist=letters_frequency)
     print(f'Letter Frequency: {repr(letters_frequency)}')
     print(f'Word Frequency: {repr(word_frequency)}')
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
+    print(f'Entropy: {nltk.entropy(prob)}')
+
 
 
 if __name__ == '__main__':
