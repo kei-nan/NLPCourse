@@ -5,11 +5,11 @@ import argparse
 import logging
 
 
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('exc1')
 
 
-def remove_header_and_footer(lines, start_barrier='*** START', end_barrier='*** END'):
+def remove_header_and_footer(lines, start_barrier='*** START OF THIS PROJECT', end_barrier='*** END OF THIS PROJECT'):
     header_and_footer_positions = []
     start = 0
     end = len(lines)
@@ -20,6 +20,7 @@ def remove_header_and_footer(lines, start_barrier='*** START', end_barrier='*** 
             end = pos
         else:
             continue
+    logger.info('Header: {}, Footer: {}'.format(start, end))
     lines = lines[start+1:end]
     return lines
 
@@ -56,6 +57,7 @@ def find_chapter_words(lines,
         is_sentance = len(words) >= words_in_sentance
         if not is_chapter_candidate or is_sentance:
             continue
+        logger.debug(f'chapter candidate: {words}')
         if first_word not in word_to_info:
             word_to_info[first_word] = WordInfo()
         info = word_to_info[first_word]
@@ -117,9 +119,10 @@ def cleanup_text(text):
     from nltk.tokenize import word_tokenize
     # Move to lowercase
     lines = text.splitlines()
+    print(lines)
     lines = remove_header_and_footer(lines)
+    print(lines)
     lines = remove_chapters(lines)
-    text_in_lowercase = ''.join(lines)
 
     text_in_lowercase = text.lower()
     # Remove punctuation
