@@ -84,7 +84,6 @@ def remove_chapters(lines, chapter_expected_apperances=2):
         stripped_line = line.strip()
         for word in chapter_words:
             if stripped_line.startswith(word):
-
                 if line not in chapter_lines:
                     chapter_lines[stripped_line] = LineInfo()
                 chapter_line = chapter_lines[stripped_line]
@@ -136,12 +135,13 @@ def tokenize_lines(lines, keep_non_english_letters):
             if prev_end is not None:
                 space_token = line[prev_end:start]
                 space_token = clean_space(space_token)
-                tokens.append(space_token)
-                space_list.append(space_token)
+                if space_token:
+                    tokens.append(space_token)
+                    space_list.append(space_token)
             prev_end = end
             text_token = line[start: end].lower()
             text_token = ''.join([clean_char(c) for c in text_token])
-            if text_token in blacklisted_words:
+            if not text_token or text_token in blacklisted_words:
                 continue
             tokens.append(text_token)
     logger.debug('Spaces: {}'.format(''.join(space_list).strip()))
