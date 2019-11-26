@@ -175,10 +175,7 @@ def plot_word_frequencies(cleaned_content):
     print('Top Frequent Words: {}'.format(top_frequent_words))
 
     probabilities = sorted(word_to_probability.values())
-    start = probabilities[0]
-    stop = probabilities[-1]
-    print('Plotting from: {}, to: {}'.format(start, stop))
-    x = np.logspace(start=start, stop=stop, endpoint=True)
+    log_prob = [np.log(p) for p in probabilities]
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -190,7 +187,7 @@ def plot_word_frequencies(cleaned_content):
     ax.yaxis.set_ticks_position('left')
 
     # plot the function
-    plt.plot(x, 'r')
+    plt.plot(log_prob, 'r')
     plt.show()
 
 
