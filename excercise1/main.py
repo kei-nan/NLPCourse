@@ -108,7 +108,7 @@ def remove_chapters(lines, chapter_expected_apperances=2):
     return lines
 
 
-def tokenize_lines(lines, keep_non_alpha):
+def tokenize_lines(lines, keep_non_english_letters):
     from nltk.corpus import stopwords
     from nltk.tokenize import RegexpTokenizer
 
@@ -117,7 +117,7 @@ def tokenize_lines(lines, keep_non_alpha):
         return ' ' * token.count(' ')
 
     def clean_char(character):
-        if not keep_non_alpha and not character.isalpha():
+        if not keep_non_english_letters and character not in string.ascii_lowercase:
             return ''
         else:
             return character
@@ -153,11 +153,11 @@ def tokenize_lines(lines, keep_non_alpha):
 # 2) Removes punctuation
 # 3) Tokenizes text
 # 4) Removes header and chapter keywords
-def cleanup_text(text, keep_non_alpha=False):
+def cleanup_text(text, keep_non_english_letters=False):
     lines = text.splitlines()
     lines = remove_header_and_footer(lines)
     lines = remove_chapters(lines)
-    tokens = tokenize_lines(lines, keep_non_alpha)
+    tokens = tokenize_lines(lines, keep_non_english_letters)
     return tokens
 
 
