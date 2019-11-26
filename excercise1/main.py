@@ -108,22 +108,24 @@ def remove_chapters(lines, chapter_expected_apperances=2):
     return lines
 
 
-# Cleansup the text by:
-# 1) Moving to lowercase
-# 2) Removes punctuation
-# 3) Tokenizes text
-# 4) Removes header and chapter keywords
-def cleanup_text(text):
+def tokenize_lines(lines, keep_non_alpha):
     from nltk.corpus import stopwords
-    from nltk.tokenize import WhitespaceTokenizer
-    # Move to lowercase
-    lines = text.splitlines()
-    lines = remove_header_and_footer(lines)
-    lines = remove_chapters(lines)
+    from nltk.tokenize import RegexpTokenizer
+
+    # can be a string containing spaces with a punctuation inside
+    def clean_space(token):
+        return ' ' * token.count(' ')
+
+    def clean_char(character):
+        if not keep_non_alpha and not character.isalpha():
+            return ''
+        else:
+            return character
 
     # Tokenize text
     blacklisted_words = set(stopwords.words('english'))
-    tokenizer = WhitespaceTokenizer()
+    pattern = string.punctuation + r'\s'
+    tokenizer = RegexpTokenizer(r'[{}]+'.format(pattern), gaps=True)
     tokens = []
     space_list = []
     for line in lines:
@@ -133,15 +135,29 @@ def cleanup_text(text):
             start, end = span
             if prev_end is not None:
                 space_token = line[prev_end:start]
+                space_token = clean_space(space_token)
                 tokens.append(space_token)
                 space_list.append(space_token)
             prev_end = end
-            text_token = line[start: end]
-            # remove punctuation
+            text_token = line[start: end].lower()
+            text_token = ''.join([clean_char(c) for c in text_token])
             if text_token in blacklisted_words:
                 continue
             tokens.append(text_token)
     logger.debug('Spaces: {}'.format(''.join(space_list).strip()))
+    return tokens
+
+
+# Cleansup the text by:
+# 1) Moving to lowercase
+# 2) Removes punctuation
+# 3) Tokenizes text
+# 4) Removes header and chapter keywords
+def cleanup_text(text, keep_non_alpha=False):
+    lines = text.splitlines()
+    lines = remove_header_and_footer(lines)
+    lines = remove_chapters(lines)
+    tokens = tokenize_lines(lines, keep_non_alpha)
     return tokens
 
 
@@ -167,15 +183,10 @@ def main():
         content = args.text
     cleaned_content = cleanup_text(text=content)
     letters_frequency = nltk.FreqDist(''.join(cleaned_content))
-    for c in letters_frequency:
-        if not c.isalpha():
-            print(f'\'{c}\': {letters_frequency[c]}')
     letters_frequency_sum = sum(letters_frequency.values())
     letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
     letters_probability_sum = sum(letter_probability.values())
     print(letters_frequency.keys())
-
-
     word_frequency = nltk.FreqDist(cleaned_content)
     # not sure about the entropy
     prob = nltk.MLEProbDist(freqdist=letters_frequency)
