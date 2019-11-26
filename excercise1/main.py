@@ -187,11 +187,15 @@ def main():
     letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
     letters_probability_sum = sum(letter_probability.values())
     print(letters_frequency.keys())
-    word_frequency = nltk.FreqDist(cleaned_content)
+    english_content = [token for token in cleaned_content if not token.isspace()]
+    word_to_frequency = nltk.FreqDist(english_content)
+    frequent_words = sorted(word_to_frequency.keys(), key=lambda k: word_to_frequency[k], reverse=True)
+    print('Top Frequent Word: {}'.format(frequent_words[0]))
+    top_frequent_words = {k: v for (k, v) in word_to_frequency.items() if frequent_words.index(k) < 5}
+    print('Top Frequent Words: {}'.format(top_frequent_words))
     # not sure about the entropy
     prob = nltk.MLEProbDist(freqdist=letters_frequency)
     print(f'Letter Frequency: {repr(letters_frequency)}')
-    print(f'Word Frequency: {repr(word_frequency)}')
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
     print(f'Entropy: {nltk.entropy(prob)}')
