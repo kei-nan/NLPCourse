@@ -5,7 +5,7 @@ import argparse
 import logging
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('exc1')
 
 
@@ -99,7 +99,6 @@ def remove_chapters(lines, chapter_expected_apperances=2):
         largest_apperances.append(largest_position)
     # sorting in reverse so we can remove lines without affecting next line deletion
     largest_apperances = sorted(largest_apperances, reverse=True)
-    print(largest_apperances)
     first_chapter_second_apperance = largest_apperances[-1]
     last_chapter_second_apperance = largest_apperances[0]
     lines = lines[:last_chapter_second_apperance]
@@ -116,50 +115,33 @@ def remove_chapters(lines, chapter_expected_apperances=2):
 # 4) Removes header and chapter keywords
 def cleanup_text(text):
     from nltk.corpus import stopwords
-    from nltk.tokenize import word_tokenize
+    from nltk.tokenize import WhitespaceTokenizer
     # Move to lowercase
     lines = text.splitlines()
-    print(lines)
     lines = remove_header_and_footer(lines)
-    print(lines)
     lines = remove_chapters(lines)
-
-    text_in_lowercase = text.lower()
-    # Remove punctuation
-    def remove_puncutation(c):
-        return '' if c in string.punctuation else c
 
     # Tokenize text
     blacklisted_words = set(stopwords.words('english'))
-    # tokenize = RegexpTokenizer('\w+')
-    word_tokens = word_tokenize(text_in_lowercase)
-
-    first_chapter = None
-    is_chapter = False
-    filtered_lowercase_text = []
-    chapters = {}
-    for w in word_tokens:
-        w = ''.join([remove_puncutation(c) for c in w])
-        if not w or w in blacklisted_words:
-            continue
-        elif w.startswith('chapter'):
-            if first_chapter is None:
-                first_chapter = len(filtered_lowercase_text)
-            is_chapter = True
-        elif is_chapter:
-            # We expect each chapter to appear at most twice, once in headline and another in text
-            if w not in chapters:
-                chapters[w] = True
-            elif chapters[w] is True:
-                chapters[w] = False
-            else:
-                raise Exception(f'Chapter \'{w}]\' was encountered more than twice, encountered first chapter: {first_chapter}')
-            is_chapter = False
-        else:
-            filtered_lowercase_text.append(w)
-    if first_chapter is not None:
-        filtered_lowercase_text = filtered_lowercase_text[first_chapter:]
-    return filtered_lowercase_text
+    tokenizer = WhitespaceTokenizer()
+    tokens = []
+    space_list = []
+    for line in lines:
+        prev_end = None
+        words_span_in_line = tokenizer.span_tokenize(text=line)
+        for span in words_span_in_line:
+            start, end = span
+            if prev_end is not None:
+                space_token = line[prev_end:start]
+                tokens.append(space_token)
+                space_list.append(space_token)
+            prev_end = end
+            text_token = line[start: end].strip(string.punctuation)
+            if text_token in blacklisted_words:
+                continue
+            tokens.append(text_token)
+    logger.debug('Spaces: {}'.format(''.join(space_list).strip()))
+    return tokens
 
 
 def main():
@@ -184,6 +166,9 @@ def main():
         content = args.text
     cleaned_content = cleanup_text(text=content)
     letters_frequency = nltk.FreqDist(''.join(cleaned_content))
+    for c in letters_frequency:
+        if not c.isalpha():
+            print(f'\'{c}\': {letters_frequency[c]}')
     letters_frequency_sum = sum(letters_frequency.values())
     letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
     letters_probability_sum = sum(letter_probability.values())
