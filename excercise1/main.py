@@ -3,10 +3,40 @@ import string
 import urllib.request
 import argparse
 import logging
-
+from collections import Counter
+from math import log2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('exc1')
+
+
+def estimate_cross_entropy(q):
+    q = [i for i in q if i > 0]
+    length = len(q)
+    return -sum((1 / length) * log2(q[i]) for i in range(length))
+
+
+def _create_letter_pairs_counter(clean_text_list):
+    clean_text_str = ''.join(clean_text_list)
+    list_of_letter_pairs = [clean_text_str[i:i + 2] for i in range(len(clean_text_str) - 1)]
+    return Counter(list_of_letter_pairs)
+
+
+def _calc_conditional_letter_probability(letter_pairs_counter, letter_probability, letters_frequency):
+    ans = []
+    alphabet = list(string.ascii_lowercase + ' ')
+    second_letter: string
+    for second_letter in alphabet:
+        ans += ([letter_pairs_counter[first_letter + second_letter] / letters_frequency[second_letter]
+                 for first_letter in alphabet])
+    return ans
+
+
+def calc_cross_entropy_from_probability(clean_text_list, letter_probability, letters_frequency):
+    letter_pairs_counter =\
+        _create_letter_pairs_counter(clean_text_list)
+    return estimate_cross_entropy(
+        _calc_conditional_letter_probability(letter_pairs_counter, letter_probability, letters_frequency))
 
 
 def remove_header_and_footer(lines, start_barrier='*** START OF THIS PROJECT', end_barrier='*** END OF THIS PROJECT'):
@@ -21,7 +51,7 @@ def remove_header_and_footer(lines, start_barrier='*** START OF THIS PROJECT', e
         else:
             continue
     logger.info('Header: {}, Footer: {}'.format(start, end))
-    lines = lines[start+1:end]
+    lines = lines[start + 1:end]
     return lines
 
 
@@ -37,6 +67,7 @@ def find_chapter_words(lines,
 
         def __repr__(self):
             return repr(self.positions)
+
     word_to_info = {}
     chapter_punctuation = string.punctuation
     for line_number, line in enumerate(lines):
@@ -63,7 +94,7 @@ def find_chapter_words(lines,
         info = word_to_info[first_word]
         info.count += 1
         info.positions.append(line_number)
-    meta_content_words = {k:v for (k,v) in word_to_info.items()
+    meta_content_words = {k: v for (k, v) in word_to_info.items()
                           if v.count >= appearance_threshold
                           and (k.istitle() or k.isupper())}
     return meta_content_words.keys()
@@ -77,6 +108,7 @@ def remove_chapters(lines, chapter_expected_apperances=2):
 
         def __repr__(self):
             return repr(self.positions)
+
     chapter_lines = {}
     chapter_words = find_chapter_words(lines)
     print('Chapter Words: {}'.format(chapter_words))
@@ -90,7 +122,7 @@ def remove_chapters(lines, chapter_expected_apperances=2):
                 chapter_line.count += 1
                 chapter_line.positions.append(line_number)
                 break
-    chapter_lines = {k: v for (k,v) in chapter_lines.items() if v.count == chapter_expected_apperances}
+    chapter_lines = {k: v for (k, v) in chapter_lines.items() if v.count == chapter_expected_apperances}
     largest_apperances = []
     for line_info in chapter_lines.values():
         # we iterate line by line so positions are already sorted
@@ -182,9 +214,13 @@ def main():
     elif args.text:
         content = args.text
     cleaned_content = cleanup_text(text=content)
+
     letters_frequency = nltk.FreqDist(''.join(cleaned_content))
     letters_frequency_sum = sum(letters_frequency.values())
     letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
+
+    conditional_letter_probability = calc_cross_entropy_from_probability(cleaned_content, letter_probability, letters_frequency)
+
     letters_probability_sum = sum(letter_probability.values())
     print(letters_frequency.keys())
     word_frequency = nltk.FreqDist(cleaned_content)
@@ -195,6 +231,7 @@ def main():
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
     print(f'Entropy: {nltk.entropy(prob)}')
+    print(f'Entropy from conditional letter probability: {conditional_letter_probability}')
 
 
 if __name__ == '__main__':
