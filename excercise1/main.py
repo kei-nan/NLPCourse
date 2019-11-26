@@ -161,6 +161,39 @@ def cleanup_text(text, keep_non_english_letters=False):
     return tokens
 
 
+def plot_word_frequencies(cleaned_content):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    english_content = [token for token in cleaned_content if not token.isspace()]
+    word_to_frequency = nltk.FreqDist(english_content)
+    word_count = sum(word_to_frequency.values())
+    word_to_probability = {k: (v / word_count) for (k, v) in word_to_frequency.items()}
+    frequent_words = sorted(word_to_frequency.keys(), key=lambda k: word_to_frequency[k], reverse=True)
+    print('Top Frequent Word: {}'.format(frequent_words[0]))
+    top_frequent_words = {k: v for (k, v) in word_to_frequency.items() if frequent_words.index(k) < 5}
+    print('Top Frequent Words: {}'.format(top_frequent_words))
+
+    probabilities = sorted(word_to_probability.values())
+    start = probabilities[0]
+    stop = probabilities[-1]
+    print('Plotting from: {}, to: {}'.format(start, stop))
+    x = np.logspace(start=start, stop=stop, endpoint=True)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.spines['left'].set_position('center')
+    ax.spines['bottom'].set_position('zero')
+    ax.spines['right'].set_color('none')
+    ax.spines['top'].set_color('none')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+
+    # plot the function
+    plt.plot(x, 'r')
+    plt.show()
+
+
 def main():
     parser = argparse.ArgumentParser()
     source_group = parser.add_mutually_exclusive_group(required=True)
@@ -185,20 +218,14 @@ def main():
     letters_frequency = nltk.FreqDist(''.join(cleaned_content))
     letters_frequency_sum = sum(letters_frequency.values())
     letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
-    letters_probability_sum = sum(letter_probability.values())
     print(letters_frequency.keys())
-    english_content = [token for token in cleaned_content if not token.isspace()]
-    word_to_frequency = nltk.FreqDist(english_content)
-    frequent_words = sorted(word_to_frequency.keys(), key=lambda k: word_to_frequency[k], reverse=True)
-    print('Top Frequent Word: {}'.format(frequent_words[0]))
-    top_frequent_words = {k: v for (k, v) in word_to_frequency.items() if frequent_words.index(k) < 5}
-    print('Top Frequent Words: {}'.format(top_frequent_words))
     # not sure about the entropy
     prob = nltk.MLEProbDist(freqdist=letters_frequency)
     print(f'Letter Frequency: {repr(letters_frequency)}')
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
     print(f'Entropy: {nltk.entropy(prob)}')
+    plot_word_frequencies(cleaned_content)
 
 
 if __name__ == '__main__':
