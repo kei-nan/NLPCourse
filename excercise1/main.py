@@ -136,7 +136,8 @@ def cleanup_text(text):
                 tokens.append(space_token)
                 space_list.append(space_token)
             prev_end = end
-            text_token = line[start: end].strip(string.punctuation)
+            text_token = line[start: end]
+            # remove punctuation
             if text_token in blacklisted_words:
                 continue
             tokens.append(text_token)
