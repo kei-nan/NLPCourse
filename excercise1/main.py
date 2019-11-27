@@ -19,7 +19,7 @@ def print_conditional_letter_probability(letter_pairs_counter, letters_frequency
         text = f'P({second_letter}|_)'
         for first_letter in alphabet:
             prob = letter_pairs_counter[(first_letter, second_letter)] / letters_frequency[second_letter]
-            text += f' {prob},'
+            text += '{0:.3f}, '.format(prob)
         print(text)
     print("conditional_letter_probability" + str(ans))
 
