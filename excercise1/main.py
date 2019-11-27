@@ -16,10 +16,14 @@ def estimate_cross_entropy(q):
     return -sum((1 / length) * log2(q[i]) for i in range(length))
 
 
-def _create_letter_pairs_counter(clean_text_list):
-    clean_text_str = ''.join(clean_text_list)
-    list_of_letter_pairs = [clean_text_str[i:i + 2] for i in range(len(clean_text_str) - 1)]
-    return Counter(list_of_letter_pairs)
+def _create_letter_pairs_counter(token_list):
+    letter_pairs = []
+    for token in token_list:
+        if len(token) <= 1:
+            continue
+        token_letter_pairs = [token[i:i + 2] for i in range(len(token) - 1)]
+        letter_pairs += token_letter_pairs
+    return Counter(letter_pairs)
 
 
 def _calc_conditional_letter_probability(letter_pairs_counter, letter_probability, letters_frequency):
