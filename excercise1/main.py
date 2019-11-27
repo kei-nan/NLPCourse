@@ -10,6 +10,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('exc1')
 
 
+def print_conditional_letter_probability(letter_pairs_counter, letters_frequency):
+    ans = []
+    alphabet = list(string.ascii_lowercase + ' ')
+    second_letter: string
+    print('  '.join(alphabet))
+    for second_letter in alphabet:
+        text = f'P({second_letter}|_)'
+        for first_letter in alphabet:
+            prob = letter_pairs_counter[(first_letter, second_letter)] / letters_frequency[second_letter]
+            text += f' {prob},'
+        print(text)
+    print("conditional_letter_probability" + str(ans))
+
+
 def remove_header_and_footer(lines, start_barrier='*** START OF THIS PROJECT', end_barrier='*** END OF THIS PROJECT'):
     header_and_footer_positions = []
     start = 0
@@ -240,6 +254,10 @@ def main():
     print(f'Cross Entropy(unigram): {unigram_cross_entropy}')
 
     prob = nltk.MLEProbDist(freqdist=letters_frequency)
+
+    pairs_counter = Counter(letter_pairs)
+    print_conditional_letter_probability(pairs_counter, letters_frequency)
+
     print(f'Letter Frequency: {repr(letters_frequency)}')
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
