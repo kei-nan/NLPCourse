@@ -225,14 +225,21 @@ def main():
     train, vocab = padded_everygram_pipeline(n, cleaned_content)
     language_model = MLE(order=n)
     language_model.fit(text=train, vocabulary_text=vocab)
-    cross_entropy = language_model.entropy(letter_pairs)
-    print(f'Cross Entropy: {cross_entropy}')
+    bigram_cross_entropy = language_model.entropy(letter_pairs)
+    print(f'Cross Entropy(bigram): {bigram_cross_entropy}')
 
     letters_frequency = nltk.FreqDist(''.join(cleaned_content))
-    prob = nltk.MLEProbDist(freqdist=letters_frequency)
+    for c, freq in letters_frequency.items():
+        print('Character: {}, Frequency: {}'.format(c, freq))
 
-    letters_frequency_sum = sum(letters_frequency.values())
-    letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
+    unigram_order = 1
+    train, vocab = padded_everygram_pipeline(unigram_order, cleaned_content)
+    unigram_language_model = MLE(order=unigram_order)
+    unigram_language_model.fit(train, vocab)
+    unigram_cross_entropy = unigram_language_model.entropy(''.join(cleaned_content))
+    print(f'Cross Entropy(unigram): {unigram_cross_entropy}')
+
+    prob = nltk.MLEProbDist(freqdist=letters_frequency)
     print(f'Letter Frequency: {repr(letters_frequency)}')
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
