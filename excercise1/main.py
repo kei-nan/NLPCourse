@@ -198,7 +198,6 @@ def cleanup_text(text, keep_non_english_letters=False):
 
 def plot_word_frequencies(cleaned_content):
     import matplotlib.pyplot as plt
-    import numpy as np
 
     english_content = [token for token in cleaned_content if not token.isspace()]
     word_to_frequency = nltk.FreqDist(english_content)
@@ -210,7 +209,7 @@ def plot_word_frequencies(cleaned_content):
     print('Top Frequent Words: {}'.format(top_frequent_words))
 
     probabilities = sorted(word_to_probability.values())
-    log_prob = [np.log(p) for p in probabilities]
+    log_prob = [log2(p) for p in probabilities]
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -252,14 +251,17 @@ def main():
     from nltk.util import bigrams
     from nltk.lm.preprocessing import padded_everygram_pipeline
 
-    bigrams = [bigrams(token) for token in cleaned_content]
-    n = 5
+    letter_pairs = []
+    for token in cleaned_content:
+        token_bigrams = list(bigrams(token))
+        if len(token_bigrams) > 0:
+            letter_pairs += token_bigrams
+    n = 2
     train, vocab = padded_everygram_pipeline(n, cleaned_content)
     language_model = MLE(order=n)
     language_model.fit(text=train, vocabulary_text=vocab)
-    print('Words: {}'.format(language_model.generate(num_words=5)))
-    #cross_entropy = language_model.entropy(bigrams)
-    #print(f'Cross Entropy: {cross_entropy}')
+    cross_entropy = language_model.entropy(letter_pairs)
+    print(f'Cross Entropy: {cross_entropy}')
 
     letters_frequency = nltk.FreqDist(''.join(cleaned_content))
     prob = nltk.MLEProbDist(freqdist=letters_frequency)
@@ -267,9 +269,7 @@ def main():
     letters_frequency_sum = sum(letters_frequency.values())
     letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
 
-    conditional_letter_probability = calc_cross_entropy_from_probability(cleaned_content, letter_probability, letters_frequency)
-
-    letters_probability_sum = sum(letter_probability.values())
+    #conditional_letter_probability = calc_cross_entropy_from_probability(cleaned_content, letter_probability, letters_frequency)
 
     print(letters_frequency.keys())
     # not sure about the entropy
@@ -278,7 +278,7 @@ def main():
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
     print(f'Entropy: {nltk.entropy(prob)}')
-    print(f'Entropy from conditional letter probability: {conditional_letter_probability}')
+    #print(f'Entropy from conditional letter probability: {conditional_letter_probability}')
     plot_word_frequencies(cleaned_content)
 
 
