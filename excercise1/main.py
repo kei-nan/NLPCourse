@@ -10,38 +10,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('exc1')
 
 
-def estimate_cross_entropy(q):
-    q = [i for i in q if i > 0]
-    length = len(q)
-    return -sum((1 / length) * log2(q[i]) for i in range(length))
-
-
-def _create_letter_pairs_counter(token_list):
-    letter_pairs = []
-    for token in token_list:
-        if len(token) <= 1:
-            continue
-        token_letter_pairs = [token[i:i + 2] for i in range(len(token) - 1)]
-        letter_pairs += token_letter_pairs
-    return Counter(letter_pairs)
-
-
-def _calc_conditional_letter_probability(letter_pairs_counter, letter_probability, letters_frequency):
-    ans = []
-    alphabet = list(string.ascii_lowercase + ' ')
-    second_letter: string
-    for second_letter in alphabet:
-        ans += ([letter_pairs_counter[first_letter + second_letter] / letters_frequency[second_letter]
-                 for first_letter in alphabet])
-    return ans
-
-
-def calc_cross_entropy_from_probability(token_list, letter_probability, letters_frequency):
-    letter_pairs = _create_letter_pairs_counter(token_list)
-    cross_entropy_estimation = estimate_cross_entropy(
-        _calc_conditional_letter_probability(letter_pairs, letter_probability, letters_frequency))
-    return cross_entropy_estimation
-
 def remove_header_and_footer(lines, start_barrier='*** START OF THIS PROJECT', end_barrier='*** END OF THIS PROJECT'):
     header_and_footer_positions = []
     start = 0
@@ -201,27 +169,24 @@ def plot_word_frequencies(cleaned_content):
 
     english_content = [token for token in cleaned_content if not token.isspace()]
     word_to_frequency = nltk.FreqDist(english_content)
-    word_count = sum(word_to_frequency.values())
-    word_to_probability = {k: (v / word_count) for (k, v) in word_to_frequency.items()}
     frequent_words = sorted(word_to_frequency.keys(), key=lambda k: word_to_frequency[k], reverse=True)
-    print('Top Frequent Word: {}'.format(frequent_words[0]))
+    logger.debug('Top Frequent Word: {}'.format(frequent_words[0]))
     top_frequent_words = {k: v for (k, v) in word_to_frequency.items() if frequent_words.index(k) < 5}
-    print('Top Frequent Words: {}'.format(top_frequent_words))
+    logger.debug('Top Frequent Words: {}'.format(top_frequent_words))
 
-    probabilities = sorted(word_to_probability.values())
-    log_prob = [log2(p) for p in probabilities]
-
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    ax.spines['left'].set_position('center')
-    ax.spines['bottom'].set_position('zero')
-    ax.spines['right'].set_color('none')
-    ax.spines['top'].set_color('none')
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
+    log_frequencies = []
+    log_ranks = []
+    for rank, word in enumerate(frequent_words):
+        frequency = word_to_frequency[word]
+        log_freq = log2(frequency)
+        log_frequencies.append(log_freq)
+        log_rank = log2(rank + 1)
+        log_ranks.append(log_rank)
 
     # plot the function
-    plt.plot(log_prob, 'r')
+    plt.plot(log_ranks, log_frequencies)
+    plt.xlabel('ranks')
+    plt.ylabel('frequency')
     plt.show()
 
 
@@ -268,17 +233,10 @@ def main():
 
     letters_frequency_sum = sum(letters_frequency.values())
     letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
-
-    #conditional_letter_probability = calc_cross_entropy_from_probability(cleaned_content, letter_probability, letters_frequency)
-
-    print(letters_frequency.keys())
-    # not sure about the entropy
-
     print(f'Letter Frequency: {repr(letters_frequency)}')
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
     print(f'Entropy: {nltk.entropy(prob)}')
-    #print(f'Entropy from conditional letter probability: {conditional_letter_probability}')
     plot_word_frequencies(cleaned_content)
 
 
