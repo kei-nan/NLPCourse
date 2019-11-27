@@ -36,12 +36,11 @@ def _calc_conditional_letter_probability(letter_pairs_counter, letter_probabilit
     return ans
 
 
-def calc_cross_entropy_from_probability(clean_text_list, letter_probability, letters_frequency):
-    letter_pairs_counter =\
-        _create_letter_pairs_counter(clean_text_list)
-    return estimate_cross_entropy(
-        _calc_conditional_letter_probability(letter_pairs_counter, letter_probability, letters_frequency))
-
+def calc_cross_entropy_from_probability(token_list, letter_probability, letters_frequency):
+    letter_pairs = _create_letter_pairs_counter(token_list)
+    cross_entropy_estimation = estimate_cross_entropy(
+        _calc_conditional_letter_probability(letter_pairs, letter_probability, letters_frequency))
+    return cross_entropy_estimation
 
 def remove_header_and_footer(lines, start_barrier='*** START OF THIS PROJECT', end_barrier='*** END OF THIS PROJECT'):
     header_and_footer_positions = []
@@ -249,7 +248,22 @@ def main():
         content = args.text
     cleaned_content = cleanup_text(text=content)
 
+    from nltk.lm import MLE
+    from nltk.util import bigrams
+    from nltk.lm.preprocessing import padded_everygram_pipeline
+
+    bigrams = [bigrams(token) for token in cleaned_content]
+    n = 5
+    train, vocab = padded_everygram_pipeline(n, cleaned_content)
+    language_model = MLE(order=n)
+    language_model.fit(text=train, vocabulary_text=vocab)
+    print('Words: {}'.format(language_model.generate(num_words=5)))
+    #cross_entropy = language_model.entropy(bigrams)
+    #print(f'Cross Entropy: {cross_entropy}')
+
     letters_frequency = nltk.FreqDist(''.join(cleaned_content))
+    prob = nltk.MLEProbDist(freqdist=letters_frequency)
+
     letters_frequency_sum = sum(letters_frequency.values())
     letter_probability = {k: v / letters_frequency_sum for (k, v) in letters_frequency.items()}
 
@@ -259,7 +273,7 @@ def main():
 
     print(letters_frequency.keys())
     # not sure about the entropy
-    prob = nltk.MLEProbDist(freqdist=letters_frequency)
+
     print(f'Letter Frequency: {repr(letters_frequency)}')
     print(f'Token Count: {len(cleaned_content)}')
     print(f'Word Type Count: {len(set(cleaned_content))}')
