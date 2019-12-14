@@ -98,13 +98,13 @@ def remove_chapters(lines, chapter_expected_apperances=2):
     return lines
 
 
-def tokenize_lines(lines, keep_non_english_letters):
+def tokenize_lines(lines, keep_non_english_letters, keep_spaces):
     from nltk.corpus import stopwords
     from nltk.tokenize import RegexpTokenizer
 
     # can be a string containing spaces with a punctuation inside
     def clean_space(token):
-        return ' ' * token.count(' ')
+        return ' ' if token.count(' ') > 0 and keep_spaces else ''
 
     def clean_char(character):
         if not keep_non_english_letters and character not in string.ascii_lowercase:

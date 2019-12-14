@@ -1,26 +1,21 @@
 import nltk
-import string
 import os
 import io
 import requests
 import argparse
 import logging
-import shutil
 import zipfile
-from collections import Counter
-from math import log2
 from nltk.lm import MLE
-from nltk.lm import Vocabulary
-from nltk.lm.preprocessing import padded_everygram_pipeline
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('exc2')
 
 
-def cleanup_text(text, keep_non_english_letters=False):
+def cleanup_text(text, keep_non_english_letters=False, keep_spaces=False):
     from utils.preprocessing import tokenize_lines
+    text = text.lower()
     lines = text.splitlines()
-    tokens = tokenize_lines(lines, keep_non_english_letters)
+    tokens = tokenize_lines(lines, keep_non_english_letters, keep_spaces)
     return tokens
 
 
@@ -48,10 +43,15 @@ def main():
         testing = file.read()
         clean_testing = cleanup_text(testing)
     for language_model_type in [MLE]:
-        for ngram in range(2):
-            train, _ = padded_everygram_pipeline(ngram, clean_training)
-            _, vocab = padded_everygram_pipeline(ngram, word_list)
-            model = language_model_type(vocabulary=Vocabulary(vocab), order=ngram)
+        for ngram in range(2, 3):
+            train = nltk.ngrams(clean_testing, ngram)
+            vocab = nltk.ngrams(word_list, ngram)
+            v = list(vocab)
+            t = list(train)
+            print('Vocabulary: {}'.format(v))
+            print('Text: {}'.format(t))
+            model = language_model_type(order=ngram)
+            model.fit(text=' '.join(clean_testing), vocabulary_text=v)
             cross_entropy = model.entropy(clean_testing)
             logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
 
