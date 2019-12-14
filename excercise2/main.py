@@ -16,8 +16,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('exc2')
 
 
-def clean_file_content(content):
-    return content
+def cleanup_text(text, keep_non_english_letters=False):
+    from utils.preprocessing import tokenize_lines
+    lines = text.splitlines()
+    tokens = tokenize_lines(lines, keep_non_english_letters)
+    return tokens
 
 
 def main():
@@ -38,10 +41,10 @@ def main():
         z.extract(args.testing_corpus)
     with open(args.training_corpus, 'r') as file:
         training = file.read()
-        clean_training = clean_file_content(training)
+        clean_training = cleanup_text(training)
     with open(args.testing_corpus, 'r') as file:
         testing = file.read()
-        clean_testing = clean_file_content(testing)
+        clean_testing = cleanup_text(testing)
     for language_model_type in [MLE]:
         for ngram in range(2):
             train, _ = padded_everygram_pipeline(ngram, clean_training)
