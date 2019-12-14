@@ -35,10 +35,11 @@ def main():
                         default='persuasion.txt')
     args = parser.parse_args()
     word_list = requests.get(args.word_list_url).split('\n')
-    with requests.get(args.corpora_zip_url, stream=True) as response:
-        z = zipfile.ZipFile(io.BytesIO(response.content))
-        z.extract(args.training_corpus)
-        z.extract(args.testing_corpus)
+    if not os.path.exists(args.training_corpus) or not os.path.exists(args.testing_corpus):
+        with requests.get(args.corpora_zip_url, stream=True) as response:
+            z = zipfile.ZipFile(io.BytesIO(response.content))
+            z.extract(args.training_corpus)
+            z.extract(args.testing_corpus)
     with open(args.training_corpus, 'r') as file:
         training = file.read()
         clean_training = cleanup_text(training)
@@ -54,3 +55,11 @@ def main():
             logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
 
 
+if __name__ == '__main__':
+    try:
+        logger.debug('Exercise 2')
+        nltk.download('stopwords')
+        nltk.download('punkt')
+        main()
+    finally:
+        logger.debug('Bye bye...')
