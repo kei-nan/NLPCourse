@@ -44,14 +44,10 @@ def main():
         clean_testing = cleanup_text(testing)
     for language_model_type in [MLE]:
         for ngram in range(2, 3):
-            train = nltk.ngrams(clean_testing, ngram)
-            vocab = nltk.ngrams(word_list, ngram)
-            v = list(vocab)
-            t = list(train)
-            print('Vocabulary: {}'.format(v))
-            print('Text: {}'.format(t))
-            model = language_model_type(order=ngram)
-            model.fit(text=' '.join(clean_testing), vocabulary_text=v)
+            vocab = list(nltk.everygrams(sequence=word_list, min_len=ngram, max_len=ngram))
+            train_data = list(nltk.ngrams(sequence=clean_testing, n=ngram, pad_right=True))
+            model = language_model_type(order=ngram, vocabulary=nltk.lm.Vocabulary(vocab))
+            model.fit(text=train_data)
             cross_entropy = model.entropy(clean_testing)
             logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
 
