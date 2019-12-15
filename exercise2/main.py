@@ -6,17 +6,26 @@ import argparse
 import logging
 import zipfile
 from nltk.lm import MLE
+from collections import Counter
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('exc2')
 
 
 def cleanup_text(text, keep_non_english_letters=False, keep_spaces=False):
-    from utils.preprocessing import tokenize_lines
+    from utils.preprocessing import tokenize_sentances
     text = text.lower()
     lines = text.splitlines()
-    tokens = tokenize_lines(lines, keep_non_english_letters, keep_spaces)
-    return tokens
+    sentances = tokenize_sentances(lines, keep_non_english_letters, keep_spaces)
+    return sentances
+
+
+def make_ngram(ngram, sentances):
+    data = []
+    for sentance in sentances:
+        ngrams_in_sentance = nltk.ngrams(sequence=sentance, n=ngram, pad_right=True)
+        data.append(ngrams_in_sentance)
+    return data
 
 
 def main():
@@ -44,11 +53,12 @@ def main():
         clean_testing = cleanup_text(testing)
     for language_model_type in [MLE]:
         for ngram in range(2, 3):
-            vocab = list(nltk.everygrams(sequence=word_list, min_len=ngram, max_len=ngram))
-            train_data = list(nltk.ngrams(sequence=clean_training, n=ngram, pad_right=True))
-            model = language_model_type(order=ngram, vocabulary=nltk.lm.Vocabulary(vocab))
+            vocab_counts = Counter(nltk.everygrams(sequence=word_list, min_len=ngram, max_len=ngram))
+            model = language_model_type(order=ngram, vocabulary=nltk.lm.Vocabulary(counts=vocab_counts))
+            train_data = make_ngram(ngram, clean_training)
             model.fit(text=train_data)
-            cross_entropy = model.entropy(clean_testing)
+            test_data = make_ngram(ngram, clean_testing)
+            cross_entropy = model.entropy(test_data)
             logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
 
 

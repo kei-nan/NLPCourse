@@ -98,7 +98,7 @@ def remove_chapters(lines, chapter_expected_apperances=2):
     return lines
 
 
-def tokenize_lines(lines, keep_non_english_letters, keep_spaces):
+def tokenize_sentances(lines, keep_non_english_letters, keep_spaces):
     from nltk.corpus import stopwords
     from nltk.tokenize import RegexpTokenizer
 
@@ -118,6 +118,7 @@ def tokenize_lines(lines, keep_non_english_letters, keep_spaces):
     tokenizer = RegexpTokenizer(r'[{}]+'.format(pattern), gaps=True)
     tokens = []
     space_list = []
+    sentances = []
     for line in lines:
         prev_end = None
         words_span_in_line = tokenizer.span_tokenize(text=line)
@@ -131,8 +132,16 @@ def tokenize_lines(lines, keep_non_english_letters, keep_spaces):
                     space_list.append(space_token)
             prev_end = end
             text_token = line[start: end].lower()
+            is_end_of_sentance = text_token.endswith('.')
             text_token = ''.join([clean_char(c) for c in text_token])
-            if not text_token or text_token in blacklisted_words:
-                continue
-            tokens.append(text_token)
-    return tokens
+            if text_token and text_token not in blacklisted_words:
+                tokens.append(text_token)
+            if is_end_of_sentance:
+                sentances.append(tokens)
+                tokens = []
+    return sentances
+
+
+def tokenize_lines(lines, keep_non_english_letters, keep_spaces):
+    sentances = tokenize_sentances(lines, keep_non_english_letters, keep_spaces)
+    return ''.join(sentances)
