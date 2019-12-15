@@ -58,7 +58,7 @@ def main():
             train_data = make_ngram(ngram, clean_training)
             model.fit(text=train_data)
             test_data = make_ngram(ngram, clean_testing)
-            cross_entropy = model.entropy(test_data)
+            cross_entropy = model.entropy(''.join(test_data))
             logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
 
 

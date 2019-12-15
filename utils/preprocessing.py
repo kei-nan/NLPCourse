@@ -132,13 +132,15 @@ def tokenize_sentances(lines, keep_non_english_letters, keep_spaces):
                     space_list.append(space_token)
             prev_end = end
             text_token = line[start: end].lower()
-            is_end_of_sentance = text_token.endswith('.')
+            prev_len = len(text_token)
             text_token = ''.join([clean_char(c) for c in text_token])
             if text_token and text_token not in blacklisted_words:
                 tokens.append(text_token)
-            if is_end_of_sentance:
+            if len(text_token) != prev_len:
                 sentances.append(tokens)
                 tokens = []
+    if len(tokens) > 0:
+        sentances.append(tokens)
     return sentances
 
 
