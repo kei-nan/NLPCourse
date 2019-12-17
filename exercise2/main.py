@@ -24,7 +24,8 @@ def make_ngram(ngram, sentances):
     data = []
     for sentance in sentances:
         ngrams_in_sentance = list(nltk.ngrams(sequence=sentance, n=ngram, pad_right=False))
-        data.append(ngrams_in_sentance)
+        if len(ngrams_in_sentance) > 0:
+            data.append(ngrams_in_sentance)
     return data
 
 
@@ -58,7 +59,7 @@ def main():
             train_data = make_ngram(ngram, clean_training)
             model.fit(text=train_data)
             test_data = make_ngram(ngram, clean_testing)
-            cross_entropy = model.entropy(''.join(test_data))
+            cross_entropy = model.entropy(test_data)
             logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
 
 
