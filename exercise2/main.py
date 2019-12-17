@@ -36,7 +36,7 @@ def main():
     parser.add_argument('-c', '--corpora-zip-url',
                         default='http://www2.mta.ac.il/~gideon/courses/nlp/data/corpus_combined.zip')
     parser.add_argument('-t', '--training-corpus',
-                        default='the_life_and_adventures_of_nicholas_nickleby.txt')
+                        default='emma.txt')
     parser.add_argument('-e', '--testing-corpus',
                         default='persuasion.txt')
     args = parser.parse_args()
@@ -54,12 +54,24 @@ def main():
         clean_testing = cleanup_text(testing)
     for language_model_type in [MLE]:
         for ngram in range(2, 3):
-            vocab_counts = Counter(nltk.everygrams(sequence=word_list, min_len=ngram, max_len=ngram))
-            model = language_model_type(order=ngram, vocabulary=nltk.lm.Vocabulary(counts=vocab_counts))
+            model = language_model_type(order=ngram, vocabulary=nltk.lm.Vocabulary(counts=word_list))
             train_data = make_ngram(ngram, clean_training)
             model.fit(text=train_data)
             test_data = make_ngram(ngram, clean_testing)
-            cross_entropy = model.entropy(test_data)
+            flat_test_data = [item for sublist in test_data for item in sublist]
+            #log_scores = []
+            #for element in flat_test_data:
+            #    word = element[-1]
+            #    context = element[:-1]
+            #    word_lookup = model.vocab.lookup(word)
+            #    context_lookup = model.vocab.lookup(context) if context else None
+            #    score = model.unmasked_score(word_lookup, context_lookup)
+            #    log_scores.append(score)
+            #s = sum(log_scores)
+            #count = len(log_scores)
+            #e = s / count
+            #cross_entropy = -1 * model._mean(log_scores)
+            cross_entropy = model.entropy(flat_test_data)
             logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
 
 
