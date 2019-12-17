@@ -23,7 +23,7 @@ def cleanup_text(text, keep_non_english_letters=False, keep_spaces=False):
 def make_ngram(ngram, sentances):
     data = []
     for sentance in sentances:
-        ngrams_in_sentance = nltk.ngrams(sequence=sentance, n=ngram, pad_right=True)
+        ngrams_in_sentance = list(nltk.ngrams(sequence=sentance, n=ngram, pad_right=False))
         data.append(ngrams_in_sentance)
     return data
 
