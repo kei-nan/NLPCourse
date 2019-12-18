@@ -5,8 +5,7 @@ import requests
 import argparse
 import logging
 import zipfile
-from nltk.lm import MLE
-from collections import Counter
+from nltk.lm import Lidstone
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('exc2')
@@ -52,25 +51,13 @@ def main():
     with open(args.testing_corpus, 'r') as file:
         testing = file.read()
         clean_testing = cleanup_text(testing)
-    for language_model_type in [MLE]:
+    for language_model_type in [Lidstone]:
         for ngram in range(2, 3):
-            model = language_model_type(order=ngram, vocabulary=nltk.lm.Vocabulary(counts=word_list))
+            model = language_model_type(order=ngram, gamma=0.5, vocabulary=nltk.lm.Vocabulary(counts=word_list))
             train_data = make_ngram(ngram, clean_training)
             model.fit(text=train_data)
             test_data = make_ngram(ngram, clean_testing)
             flat_test_data = [item for sublist in test_data for item in sublist]
-            #log_scores = []
-            #for element in flat_test_data:
-            #    word = element[-1]
-            #    context = element[:-1]
-            #    word_lookup = model.vocab.lookup(word)
-            #    context_lookup = model.vocab.lookup(context) if context else None
-            #    score = model.unmasked_score(word_lookup, context_lookup)
-            #    log_scores.append(score)
-            #s = sum(log_scores)
-            #count = len(log_scores)
-            #e = s / count
-            #cross_entropy = -1 * model._mean(log_scores)
             cross_entropy = model.entropy(flat_test_data)
             logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
 
