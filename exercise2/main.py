@@ -52,7 +52,7 @@ def main():
         testing = file.read()
         clean_testing = cleanup_text(testing)
     for language_model_type in [Lidstone]:
-        for ngram in range(4):
+        for ngram in range(2, 4):
             model = language_model_type(order=ngram, gamma=0.5, vocabulary=nltk.lm.Vocabulary(counts=word_list))
             train_data = make_ngram(ngram, clean_training)
             model.fit(text=train_data)
