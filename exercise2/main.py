@@ -35,31 +35,40 @@ def main():
     parser.add_argument('-c', '--corpora-zip-url',
                         default='http://www2.mta.ac.il/~gideon/courses/nlp/data/corpus_combined.zip')
     parser.add_argument('-t', '--training-corpus',
-                        default='emma.txt')
+                        default=None)
     parser.add_argument('-e', '--testing-corpus',
                         default='persuasion.txt')
     args = parser.parse_args()
     word_list = requests.get(args.word_list_url).content.decode('utf-8').split('\n')
-    if not os.path.exists(args.training_corpus) or not os.path.exists(args.testing_corpus):
+    if not os.path.exists(args.testing_corpus):
         with requests.get(args.corpora_zip_url, stream=True) as response:
             z = zipfile.ZipFile(io.BytesIO(response.content))
-            z.extract(args.training_corpus)
-            z.extract(args.testing_corpus)
-    with open(args.training_corpus, 'r') as file:
-        training = file.read()
-        clean_training = cleanup_text(training)
+            z.extractall()
+    training_text = []
+    for filename in os.listdir(os.curdir):
+        if filename == args.testing_corpus:
+            continue
+        if not filename.endswith(".txt"):
+            continue
+        if args.training_corpus is not None and args.training_corpus != filename:
+            continue
+        print('Reading: {}'.format(filename))
+        with open(filename, 'r') as file:
+            testing = file.read()
+            training_text.extend(cleanup_text(testing))
     with open(args.testing_corpus, 'r') as file:
         testing = file.read()
         clean_testing = cleanup_text(testing)
     for language_model_type in [Lidstone]:
         for ngram in range(1, 4):
-            model = language_model_type(order=ngram, gamma=0.5, vocabulary=nltk.lm.Vocabulary(counts=word_list))
-            train_data = make_ngram(ngram, clean_training)
+            float_gamma = 0.5
+            model = language_model_type(order=ngram, gamma=float_gamma, vocabulary=nltk.lm.Vocabulary(counts=word_list))
+            train_data = make_ngram(ngram, training_text)
             model.fit(text=train_data)
             test_data = make_ngram(ngram, clean_testing)
             flat_test_data = [item for sublist in test_data for item in sublist]
             cross_entropy = model.entropy(flat_test_data)
-            logger.info('Cross Entropy for N={}: {}'.format(ngram, cross_entropy))
+            logger.info('Cross Entropy for N={}, Gamma={}: {}'.format(ngram, float_gamma, cross_entropy))
 
 
 if __name__ == '__main__':
