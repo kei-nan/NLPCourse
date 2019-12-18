@@ -5,6 +5,7 @@ import requests
 import argparse
 import logging
 import zipfile
+from utils.preprocessing import tokenize_sentances
 from nltk.lm import Lidstone
 
 logging.basicConfig(level=logging.INFO)
@@ -12,7 +13,6 @@ logger = logging.getLogger('exc2')
 
 
 def cleanup_text(text, keep_non_english_letters=False, keep_spaces=False):
-    from utils.preprocessing import tokenize_sentances
     text = text.lower()
     lines = text.splitlines()
     sentances = tokenize_sentances(lines, keep_non_english_letters, keep_spaces)
@@ -52,7 +52,7 @@ def main():
         testing = file.read()
         clean_testing = cleanup_text(testing)
     for language_model_type in [Lidstone]:
-        for ngram in range(2, 3):
+        for ngram in range(4):
             model = language_model_type(order=ngram, gamma=0.5, vocabulary=nltk.lm.Vocabulary(counts=word_list))
             train_data = make_ngram(ngram, clean_training)
             model.fit(text=train_data)
