@@ -98,30 +98,32 @@ def remove_chapters(lines, chapter_expected_apperances=2):
     return lines
 
 
-def tokenize_sentances(lines, keep_non_english_letters, keep_spaces):
-    from nltk.corpus import stopwords
-    from nltk.tokenize import RegexpTokenizer
+class SentanceTokenizer:
+    def __init__(self, keep_non_english_letters: bool, keep_spaces: bool):
+        from nltk.corpus import stopwords
+        from nltk.tokenize import RegexpTokenizer
 
-    # can be a string containing spaces with a punctuation inside
-    def clean_space(token):
-        return ' ' if token.count(' ') > 0 and keep_spaces else ''
+        # Tokenize text
+        self.blacklisted_words = set(stopwords.words('english'))
+        pattern = string.punctuation + r'\s'
+        self.tokenizer = RegexpTokenizer(r'[{}]+'.format(pattern), gaps=True)
+        self.keep_non_english_letters = keep_non_english_letters
+        self.keep_spaces = keep_spaces
 
-    def clean_char(character):
-        if not keep_non_english_letters and character not in string.ascii_lowercase:
-            return ''
-        else:
-            return character
+    def tokenize_sentance(self, line: str):
+        # can be a string containing spaces with a punctuation inside
+        def clean_space(token):
+            return ' ' if token.count(' ') > 0 and self.keep_spaces else ''
 
-    # Tokenize text
-    blacklisted_words = set(stopwords.words('english'))
-    pattern = string.punctuation + r'\s'
-    tokenizer = RegexpTokenizer(r'[{}]+'.format(pattern), gaps=True)
-    tokens = []
-    space_list = []
-    sentances = []
-    for line in lines:
+        def clean_char(character):
+            if not self.keep_non_english_letters and character not in string.ascii_lowercase:
+                return ''
+            else:
+                return character
+
+        tokens = []
         prev_end = None
-        words_span_in_line = tokenizer.span_tokenize(text=line)
+        words_span_in_line = self.tokenizer.span_tokenize(text=line)
         for span in words_span_in_line:
             start, end = span
             if prev_end is not None:
@@ -129,21 +131,23 @@ def tokenize_sentances(lines, keep_non_english_letters, keep_spaces):
                 space_token = clean_space(space_token)
                 if space_token:
                     tokens.append(space_token)
-                    space_list.append(space_token)
             prev_end = end
             text_token = line[start: end].lower()
-            prev_len = len(text_token)
             text_token = ''.join([clean_char(c) for c in text_token])
-            if text_token and text_token not in blacklisted_words:
+            if text_token and text_token not in self.blacklisted_words:
                 tokens.append(text_token)
-            if len(text_token) != prev_len:
+        return tokens
+
+    def tokenize_sentances(self, lines):
+        sentances = []
+        for line in lines:
+            tokens = self.tokenize_sentance(line)
+            if len(tokens) > 0:
                 sentances.append(tokens)
-                tokens = []
-    if len(tokens) > 0:
-        sentances.append(tokens)
-    return sentances
+        return sentances
 
 
 def tokenize_lines(lines, keep_non_english_letters, keep_spaces):
-    sentances = tokenize_sentances(lines, keep_non_english_letters, keep_spaces)
+    tokenizer = SentanceTokenizer(keep_non_english_letters, keep_spaces)
+    sentances = tokenizer.tokenize_sentances(lines, keep_non_english_letters, keep_spaces)
     return ''.join(sentances)
