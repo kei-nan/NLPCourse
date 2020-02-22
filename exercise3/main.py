@@ -62,7 +62,6 @@ def main():
     print('Result: {}%'.format(precentage))
 
 
-
 if __name__ == '__main__':
     try:
         logger.debug('Exercise 3')
