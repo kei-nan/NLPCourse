@@ -6,7 +6,7 @@ from utils.preprocessing import SentanceTokenizer
 
 tokenizer = SentanceTokenizer(keep_non_english_letters=False,
                               keep_spaces=False,
-                              stemming=False)
+                              stemming=True)
 
 
 class Document:
