@@ -3,6 +3,7 @@ import os
 import html
 import argparse
 import logging
+import random
 
 from exercise3.classifiers import OneNearestNeighbor
 from exercise3.corpus import Corpus
@@ -47,6 +48,7 @@ def main():
     if not args.use_train_other_half:
         classify_documents = documents_from_file(args.classify)
     else:
+        #random.shuffle(train_documents)
         half_marker = int(len(train_documents) / 2)
         classify_documents = train_documents[half_marker:]
         train_documents = train_documents[:half_marker]
@@ -55,11 +57,20 @@ def main():
     nearest_clasifier = OneNearestNeighbor(corpus)
     classify_results = nearest_clasifier.classify_all(classify_documents)
     success = 0
+    bad_documents = {}
     for index, document in enumerate(classify_documents):
         if document.category and classify_results[index] == document.category:
             success += 1
+        else:
+            bad_documents[index] = document
     precentage = (success / len(classify_results)) * 100
     print('Result: {}%'.format(precentage))
+    # count = 0
+    # for index, document in bad_documents.items():
+    #     print('{}, classified as: {}'.format(document, classify_results[index]))
+    #     count += 1
+    #     if count > 10:
+    #          break
 
 
 if __name__ == '__main__':

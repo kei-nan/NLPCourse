@@ -99,9 +99,10 @@ def remove_chapters(lines, chapter_expected_apperances=2):
 
 
 class SentanceTokenizer:
-    def __init__(self, keep_non_english_letters: bool, keep_spaces: bool):
+    def __init__(self, keep_non_english_letters: bool, keep_spaces: bool, stemming: bool):
         from nltk.corpus import stopwords
         from nltk.tokenize import RegexpTokenizer
+        from nltk.stem import PorterStemmer
 
         # Tokenize text
         self.blacklisted_words = set(stopwords.words('english'))
@@ -109,6 +110,7 @@ class SentanceTokenizer:
         self.tokenizer = RegexpTokenizer(r'[{}]+'.format(pattern), gaps=True)
         self.keep_non_english_letters = keep_non_english_letters
         self.keep_spaces = keep_spaces
+        self.stemmer = PorterStemmer() if stemming else None
 
     def tokenize_sentance(self, line: str):
         # can be a string containing spaces with a punctuation inside
@@ -134,8 +136,11 @@ class SentanceTokenizer:
             prev_end = end
             text_token = line[start: end].lower()
             text_token = ''.join([clean_char(c) for c in text_token])
-            if text_token and text_token not in self.blacklisted_words:
-                tokens.append(text_token)
+            if text_token is None or text_token in self.blacklisted_words:
+                continue
+            if self.stemmer:
+                text_token = self.stemmer.stem(text_token)
+            tokens.append(text_token)
         return tokens
 
     def tokenize_sentances(self, lines):

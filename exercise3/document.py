@@ -4,8 +4,9 @@ from bs4 import BeautifulSoup
 from utils.preprocessing import SentanceTokenizer
 
 
-tokenizer = SentanceTokenizer(keep_non_english_letters=False,
-                              keep_spaces=False)
+tokenizer = SentanceTokenizer(keep_non_english_letters=True,
+                              keep_spaces=False,
+                              stemming=True)
 
 
 class Document:
@@ -44,7 +45,8 @@ class Document:
         return tokenizer.tokenize_sentances(clean_lines)
 
     def __repr__(self):
-        return '#{}, Subject And Content: {}, Category: {}'.format(self.number, self.subject_and_content, self.category)
+        first_sentance = '.*'.join(self.subject_and_content[0])
+        return 'First Sentence: {}, Category: {}'.format(first_sentance, self.category)
 
     @staticmethod
     def from_raw_line(line: str, number: int):
