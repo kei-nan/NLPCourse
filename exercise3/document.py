@@ -22,7 +22,7 @@ class Document:
             self.document = document
             self.count = count
 
-    def __count_words(self, count_threshold=1):
+    def __count_words(self, count_threshold=0):
         word_count: Dict[str, Document.WordCount] = {}
         for sentence in self.subject_and_content:
             for word in sentence:

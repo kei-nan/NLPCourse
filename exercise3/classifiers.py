@@ -29,6 +29,9 @@ class OneNearestNeighbor(Classifier):
             if category_weights_for_word is not None:
                 for category, weights in category_weights_for_word.items():
                     category_word_weights_for_document[category].append(weights)
+            else:
+                for category in self.corpus.categories:
+                    category_word_weights_for_document[category].append(0)
             document_weight_for_word, _ = self.corpus.get_word_weight_in_corpus_for_document(word=word,
                                                                                              occurence=word_count)
             document_word_weights.append(document_weight_for_word)

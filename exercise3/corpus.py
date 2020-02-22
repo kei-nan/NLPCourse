@@ -46,7 +46,7 @@ class Corpus:
     def get_word_weight_in_corpus_for_document(self, occurence: Document.WordCount, word: str) -> Tuple[float, str]:
         document: Document = occurence.document
         term_frequency = document.word_to_word_count[word].count if word in document.word_to_word_count else 0
-        return self.__idf[word] * term_frequency, document.category
+        return self.__idf.get(word, 0) * term_frequency, document.category
 
     def __compute_word_to_weighted_category(self, categories: List[str]) -> Dict[str, Dict[str, float]]:
         word_to_weighted_categories: Dict[str, Dict[str, float]] = {}

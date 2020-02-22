@@ -36,7 +36,7 @@ def main():
     test_group = parser.add_mutually_exclusive_group()
     test_group.add_argument('--use-train-other-half',
                             action='store_true',
-                            default=False)
+                            default=True)
     test_group.add_argument('--classify',
                             default=os.path.join(os.curdir, 'train_data.txt'))
     args = parser.parse_args()
@@ -48,8 +48,8 @@ def main():
         classify_documents = documents_from_file(args.classify)
     else:
         half_marker = int(len(train_documents) / 2)
-        classify_documents = train_documents[:half_marker]
-        train_documents = train_documents[half_marker:]
+        classify_documents = train_documents[half_marker:]
+        train_documents = train_documents[:half_marker]
 
     corpus = Corpus(train_documents, categories)
     nearest_clasifier = OneNearestNeighbor(corpus)
