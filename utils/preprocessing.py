@@ -136,10 +136,8 @@ class SentanceTokenizer:
             prev_end = end
             text_token = line[start: end].lower()
             text_token = ''.join([clean_char(c) for c in text_token])
-            if text_token is None or text_token in self.blacklisted_words:
+            if not text_token or text_token in self.blacklisted_words:
                 continue
-            if self.stemmer:
-                text_token = self.stemmer.stem(text_token)
             tokens.append(text_token)
         return tokens
 

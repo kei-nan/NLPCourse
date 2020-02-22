@@ -4,9 +4,9 @@ from bs4 import BeautifulSoup
 from utils.preprocessing import SentanceTokenizer
 
 
-tokenizer = SentanceTokenizer(keep_non_english_letters=True,
+tokenizer = SentanceTokenizer(keep_non_english_letters=False,
                               keep_spaces=False,
-                              stemming=True)
+                              stemming=False)
 
 
 class Document:
