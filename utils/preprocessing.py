@@ -1,4 +1,7 @@
 import string
+import itertools
+import num2words
+from nltk.corpus import words
 
 
 def remove_header_and_footer(lines, start_barrier='*** START OF THIS PROJECT', end_barrier='*** END OF THIS PROJECT'):
@@ -99,7 +102,11 @@ def remove_chapters(lines, chapter_expected_apperances=2):
 
 
 class SentanceTokenizer:
-    def __init__(self, keep_non_english_letters: bool, keep_spaces: bool, stemming: bool):
+    def __init__(self,
+                 keep_non_english_letters: bool,
+                 keep_numbers: bool,
+                 keep_spaces: bool,
+                 stemming: bool):
         from nltk.corpus import stopwords
         from nltk.tokenize import RegexpTokenizer
         from nltk.stem import PorterStemmer
@@ -110,7 +117,9 @@ class SentanceTokenizer:
         self.tokenizer = RegexpTokenizer(r'[{}]+'.format(pattern), gaps=True)
         self.keep_non_english_letters = keep_non_english_letters
         self.keep_spaces = keep_spaces
+        self.keep_numbers = keep_numbers
         self.stemmer = PorterStemmer() if stemming else None
+        self.english_words = set(words.words())
 
     def tokenize_sentance(self, line: str):
         # can be a string containing spaces with a punctuation inside
@@ -123,7 +132,37 @@ class SentanceTokenizer:
             else:
                 return character
 
+        def translate_token_to_tokens(token):
+            if text_token.isalpha():
+                return [token]
+            elif text_token.isalnum():
+                alpha_numeric_tokens = [''.join(x) for _, x in itertools.groupby(text_token, key=str.isdigit)]
+                result = []
+                for alpha_numeric_token in alpha_numeric_tokens:
+                    if alpha_numeric_token.isalpha():
+                        result.append(alpha_numeric_token)
+                    elif self.keep_numbers:
+                        number_sentance = num2words.num2words(alpha_numeric_token)
+                        number_tokens = [word.lower().strip(string.punctuation) for word in number_sentance.split()]
+                        result.extend(number_tokens)
+                # if len(result) > 2:
+                #     print(f'Alpha numeric: {result}')
+                return result
+            else:
+                cleaned_text_token = ''.join([clean_char(c) for c in text_token])
+                #if text_token != cleaned_text_token:
+                #    print(f'{text_token} -> {cleaned_text_token}')
+                return [cleaned_text_token]
+
         tokens = []
+
+        def append_token(token):
+            if not token or token in self.blacklisted_words:
+                return
+            if self.stemmer:
+                token = self.stemmer.stem(token)
+            tokens.append(token)
+
         prev_end = None
         words_span_in_line = self.tokenizer.span_tokenize(text=line)
         for span in words_span_in_line:
@@ -135,12 +174,13 @@ class SentanceTokenizer:
                     tokens.append(space_token)
             prev_end = end
             text_token = line[start: end].lower()
-            text_token = ''.join([clean_char(c) for c in text_token])
-            if not text_token or text_token in self.blacklisted_words:
-                continue
-            if self.stemmer:
-                text_token = self.stemmer.stem(text_token)
-            tokens.append(text_token)
+            text_tokens = translate_token_to_tokens(text_token)
+            for token in text_tokens:
+                append_token(token)
+        #         if text_token not in self.english_words and appended_token not in self.english_words:
+        #             non_english_words.append(text_token)
+        # if len(non_english_words) > 0:
+        #     print(f'Tokens: {tokens}, non english words: {non_english_words}')
         return tokens
 
     def tokenize_sentances(self, lines):

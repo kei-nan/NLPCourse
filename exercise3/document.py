@@ -1,15 +1,11 @@
 import html
 from typing import Dict, List, Tuple
 from bs4 import BeautifulSoup
-from utils.preprocessing import SentanceTokenizer
-
-
-tokenizer = SentanceTokenizer(keep_non_english_letters=False,
-                              keep_spaces=False,
-                              stemming=True)
 
 
 class Document:
+    TOKENIZER = None
+
     def __init__(self, subject: str, content: str, category: str = None):
         self.subject: str = subject
         self.category: str = category
@@ -32,6 +28,7 @@ class Document:
                 word_count[word].count += 1
         return {word: value for word, value in word_count.items() if value.count > count_threshold}
 
+
     @staticmethod
     def __cleanup_content(content):
         # convert &#xd;&lt;br&gt;&lt to html tags
@@ -42,11 +39,12 @@ class Document:
         if content != unescaped_content:
             clean_lines = [BeautifulSoup(line, 'lxml').text.lower() for line in clean_lines]
         # Now tokenize it
-        return tokenizer.tokenize_sentances(clean_lines)
+        tokenized_sentances = Document.TOKENIZER.tokenize_sentances(clean_lines)
+        return tokenized_sentances
 
     def __repr__(self):
         first_sentance = '.*'.join(self.subject_and_content[0])
-        return 'First Sentence: {}, Category: {}'.format(first_sentance, self.category)
+        return 'First Sentence: {}, Real Category: {}'.format(first_sentance, self.category)
 
     @staticmethod
     def from_raw_line(line: str, number: int):
