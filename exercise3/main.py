@@ -8,11 +8,9 @@ import random
 from exercise3.classifiers import OneNearestNeighbor, NaiveBayes
 from exercise3.document import Document
 from exercise3.corpus import Corpus
-from math import log10
+from exercise3.score_strategy import TfIdfStrategy, BinaryStrategy
 from typing import List, Dict, Tuple
-from bs4 import BeautifulSoup
 from utils.preprocessing import SentanceTokenizer
-from nltk import NaiveBayesClassifier
 
 import warnings
 
@@ -76,11 +74,12 @@ def main():
     split_factor_text = f', split factor: {split_factor}' if split_factor else ''
     print(f'Settings: {tokenizer_settings}{split_factor_text}')
     corpus = Corpus(train_documents, categories)
-    for classifier_type in [OneNearestNeighbor, NaiveBayes]:
-        instance = classifier_type(corpus)
-        accuracy = instance.classify_all(classify_documents)
+    first = OneNearestNeighbor(score_strategy=TfIdfStrategy(corpus=corpus))
+    second = OneNearestNeighbor(score_strategy=BinaryStrategy(corpus=corpus))
+    for classifier in [first, second, NaiveBayes(corpus)]:
+        accuracy = classifier.classify_all(classify_documents)
         print(f'Accuracy: {accuracy}')
-        instance.show_most_informative_features(10)
+        classifier.show_most_informative_features(10)
 
     # first = SentanceTokenizer(keep_non_english_letters=False,
     #                           keep_numbers=True,

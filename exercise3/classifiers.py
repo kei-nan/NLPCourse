@@ -5,11 +5,11 @@ import numpy
 from typing import List, Tuple, Dict
 from exercise3.corpus import Corpus
 from exercise3.document import Document
+from exercise3.score_strategy import ScoreStrategy
 from nltk import NaiveBayesClassifier, MaxentClassifier, corpus
 
 
 class Classifier(abc.ABC):
-
     @abc.abstractmethod
     def classify_all(self, documents: List[Document]) -> List[str]:
         pass
@@ -19,8 +19,9 @@ class Classifier(abc.ABC):
 
 
 class OneNearestNeighbor(Classifier):
-    def __init__(self, corpus: Corpus, **kwargs):
-        self.corpus = corpus
+    def __init__(self, score_strategy: ScoreStrategy, **kwargs):
+        self.corpus = score_strategy.corpus
+        self.score_strategy = score_strategy
 
     def classify_all(self, documents: List[Document]) -> List[str]:
         classify_results = [self.classify(document) for document in documents]
@@ -31,26 +32,11 @@ class OneNearestNeighbor(Classifier):
         return success / len(documents)
 
     def classify(self, document: Document) -> str:
-        category_word_weights_for_document: Dict[str, List[float]] = {}
-        for category in self.corpus.categories:
-            category_word_weights_for_document[category] = []
-        document_word_weights: List[float] = []
-        for word, word_count in document.word_to_word_count.items():
-            category_weights_for_word: Dict[str, Dict[str, float]] = \
-                self.corpus.word_to_weighted_category.get(word, None)
-            if category_weights_for_word is not None:
-                for category, weights in category_weights_for_word.items():
-                    category_word_weights_for_document[category].append(weights)
-            else:
-                for category in self.corpus.categories:
-                    category_word_weights_for_document[category].append(0)
-            document_weight_for_word, _ = self.corpus.get_word_weight_in_corpus_for_document(word=word,
-                                                                                             occurence=word_count)
-            document_word_weights.append(document_weight_for_word)
+        document_scoring, category_scoring = self.score_strategy.score_document(document)
         nearest_category = None
         min_distance = None
-        for category, weights in category_word_weights_for_document.items():
-            distance = math.dist(weights, document_word_weights)
+        for category, weights in category_scoring.items():
+            distance = math.dist(weights, document_scoring)
             if min_distance is None or distance < min_distance:
                 min_distance = distance
                 nearest_category = category
@@ -79,7 +65,8 @@ class NltkClassifier(Classifier):
         return [make_feature(d, self.most_frequent_words) for d in documents]
 
     def __init__(self, corpus: Corpus, **kwargs):
-        sorted_words_by_occurences = sorted(corpus.word_to_document_occurrences.items(),
+        self.corpus = corpus
+        sorted_words_by_occurences = sorted(self.corpus.word_to_document_occurrences.items(),
                                             key=lambda x: len(x[1]),
                                             reverse=True)
         sorted_words_by_occurences = sorted_words_by_occurences[:NaiveBayes.TOP_WORDS]
