@@ -15,6 +15,7 @@ from utils.preprocessing import SentanceTokenizer
 from nltk import NaiveBayesClassifier
 
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning, module='bs4', message='.*looks like a*')
 
 logging.basicConfig(level=logging.INFO)
@@ -51,8 +52,9 @@ def main():
         categories = [category.strip() for category in categories_file.readlines()]
     train_lines = lines_from_file(args.train)
 
-    random.shuffle(train_lines)
+    # random.shuffle(train_lines)
 
+    split_factor = None
     if not args.use_train_other_half:
         classify_lines = lines_from_file(args.classify)
     else:
@@ -61,14 +63,18 @@ def main():
         classify_lines = train_lines[split_marker:]
         train_lines = train_lines[:split_marker]
 
-    tokenizer = SentanceTokenizer(keep_non_english_letters=False,
-                                  keep_numbers=True,
-                                  keep_spaces=False,
-                                  stemming=True)
+    tokenizer_settings = {"keep_non_english_letters": False,
+                          "keep_numbers": False,
+                          "keep_spaces": False,
+                          "stemming": True}
+
+    tokenizer = SentanceTokenizer(**tokenizer_settings)
 
     train_documents = documents_from_lines(train_lines, tokenizer)
     classify_documents = documents_from_lines(classify_lines, tokenizer)
 
+    split_factor_text = f', split factor: {split_factor}' if split_factor else ''
+    print(f'Settings: {tokenizer_settings}{split_factor_text}')
     corpus = Corpus(train_documents, categories)
     for classifier_type in [OneNearestNeighbor, NaiveBayes]:
         instance = classifier_type(corpus)
