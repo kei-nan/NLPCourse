@@ -6,17 +6,13 @@ from typing import List, Tuple, Dict
 from exercise3.corpus import Corpus
 from exercise3.document import Document
 from nltk import NaiveBayesClassifier, MaxentClassifier, corpus
-from nltk.classify.scikitlearn import SklearnClassifier
-from sklearn.linear_model import LogisticRegression
 
 
 class Classifier(abc.ABC):
-    @abc.abstractmethod
-    def classify(self, document) -> str:
-        pass
 
+    @abc.abstractmethod
     def classify_all(self, documents: List[Document]) -> List[str]:
-        return [self.classify(document) for document in documents]
+        pass
 
     def show_most_informative_features(self, number):
         pass
@@ -25,6 +21,14 @@ class Classifier(abc.ABC):
 class OneNearestNeighbor(Classifier):
     def __init__(self, corpus: Corpus, **kwargs):
         self.corpus = corpus
+
+    def classify_all(self, documents: List[Document]) -> List[str]:
+        classify_results = [self.classify(document) for document in documents]
+        success = 0
+        for index, document in enumerate(documents):
+            if document.category and classify_results[index] == document.category:
+                success += 1
+        return success / len(documents)
 
     def classify(self, document: Document) -> str:
         category_word_weights_for_document: Dict[str, List[float]] = {}
@@ -57,7 +61,7 @@ class OneNearestNeighbor(Classifier):
 
 
 class NltkClassifier(Classifier):
-    TOP_WORDS = 100
+    TOP_WORDS = 1000
 
     def __init_subclass__(cls, nltk_classifier):
         cls.classifier_type = nltk_classifier
@@ -81,11 +85,7 @@ class NltkClassifier(Classifier):
         sorted_words_by_occurences = sorted_words_by_occurences[:NaiveBayes.TOP_WORDS]
         self.most_frequent_words = [k for (k, v) in sorted_words_by_occurences]
         train_set = self.__create_feature_set(corpus.documents)
-        self.classifier = self.build_classifier(**kwargs)
-        self.classifier.train(train_set)
-
-    def create_classifier(self, **kwargs):
-        return self.classifier_type(**kwargs)
+        self.classifier = self.classifier_type.train(train_set)
 
     def classify(self, document):
         return nltk.classify(document=document)
@@ -101,9 +101,6 @@ class NaiveBayes(NltkClassifier, nltk_classifier=nltk.NaiveBayesClassifier):
 
 
 # http://www.nltk.org/api/nltk.classify.html?highlight=naivebayesclassifier
-class SvmClassifier(NltkClassifier, nltk_classifier=SklearnClassifier):
+class MaxentClassifier(NltkClassifier, nltk_classifier=MaxentClassifier):
     def show_most_informative_features(self, number):
         pass
-
-    def create_classifier(self, **kwargs):
-        return self.classifier_type(LogisticRegression(C=1000))

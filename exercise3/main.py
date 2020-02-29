@@ -5,9 +5,9 @@ import argparse
 import logging
 import random
 
-from exercise3.classifiers import OneNearestNeighbor, NaiveBayes, SvmClassifier
-from exercise3.corpus import Corpus
+from exercise3.classifiers import OneNearestNeighbor, NaiveBayes
 from exercise3.document import Document
+from exercise3.corpus import Corpus
 from math import log10
 from typing import List, Dict, Tuple
 from bs4 import BeautifulSoup
@@ -33,27 +33,6 @@ def documents_from_lines(lines: List[str], tokenizer: SentanceTokenizer) -> List
     return documents
 
 
-def create_corpus(train_lines: List[str], classify_lines: List[str], tokenizer: SentanceTokenizer):
-    train_documents = documents_from_lines(train_lines, tokenizer)
-    classify_documents = documents_from_lines(classify_lines, tokenizer)
-    corpus = Corpus(train_documents, categories)
-    nearest_clasifier = OneNearestNeighbor(corpus)
-    classify_results = nearest_clasifier.classify_all(classify_documents)
-    return classify_results, classify_documents
-
-
-def check_run_accuracy(classify_results, classify_documents):
-    success = 0
-    bad_documents = {}
-    for index, document in enumerate(classify_documents):
-        if document.category and classify_results[index] == document.category:
-            success += 1
-        else:
-            bad_documents[index] = document
-    precentage = (success / len(classify_results)) * 100
-    return precentage
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train',
@@ -72,15 +51,18 @@ def main():
         categories = [category.strip() for category in categories_file.readlines()]
     train_lines = lines_from_file(args.train)
 
+    random.shuffle(train_lines)
+
     if not args.use_train_other_half:
         classify_lines = lines_from_file(args.classify)
     else:
-        half_marker = int(len(train_lines) / 2)
-        classify_lines = train_lines[half_marker:]
-        train_lines = train_lines[:half_marker]
+        split_factor = 0.8
+        split_marker = int(len(train_lines) * split_factor)
+        classify_lines = train_lines[split_marker:]
+        train_lines = train_lines[:split_marker]
 
     tokenizer = SentanceTokenizer(keep_non_english_letters=False,
-                                  keep_numbers=False,
+                                  keep_numbers=True,
                                   keep_spaces=False,
                                   stemming=True)
 
@@ -88,9 +70,10 @@ def main():
     classify_documents = documents_from_lines(classify_lines, tokenizer)
 
     corpus = Corpus(train_documents, categories)
-    for classifier_type in [SvmClassifier]:
+    for classifier_type in [OneNearestNeighbor, NaiveBayes]:
         instance = classifier_type(corpus)
-        instance.classify_all(classify_documents)
+        accuracy = instance.classify_all(classify_documents)
+        print(f'Accuracy: {accuracy}')
         instance.show_most_informative_features(10)
 
     # first = SentanceTokenizer(keep_non_english_letters=False,
