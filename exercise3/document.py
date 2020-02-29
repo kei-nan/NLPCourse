@@ -1,17 +1,16 @@
 import html
 from typing import Dict, List, Tuple
 from bs4 import BeautifulSoup
+from utils.preprocessing import SentanceTokenizer
 
 
 class Document:
-    TOKENIZER = None
-
-    def __init__(self, subject: str, content: str, category: str = None):
+    def __init__(self, subject: str, content: str, category: str, tokenizer: SentanceTokenizer):
         self.subject: str = subject
         self.category: str = category
         self.content: str = content if content else ''
         subject_and_content: str = self.subject + '\n' + self.content
-        self.subject_and_content: str = self.__cleanup_content(subject_and_content)
+        self.subject_and_content: str = self.__cleanup_content(subject_and_content, tokenizer)
         self.word_to_word_count: Dict[str, Document.WordCount] = self.__count_words()
 
     class WordCount:
@@ -30,7 +29,7 @@ class Document:
 
 
     @staticmethod
-    def __cleanup_content(content):
+    def __cleanup_content(content, tokenizer: SentanceTokenizer):
         # convert &#xd;&lt;br&gt;&lt to html tags
         unescaped_content = html.unescape(content)
         # after unescaping we can have '\r' in the text without '\n'
@@ -39,7 +38,7 @@ class Document:
         if content != unescaped_content:
             clean_lines = [BeautifulSoup(line, 'lxml').text.lower() for line in clean_lines]
         # Now tokenize it
-        tokenized_sentances = Document.TOKENIZER.tokenize_sentances(clean_lines)
+        tokenized_sentances = tokenizer.tokenize_sentances(clean_lines)
         return tokenized_sentances
 
     def __repr__(self):
@@ -47,7 +46,7 @@ class Document:
         return 'First Sentence: {}, Real Category: {}'.format(first_sentance, self.category)
 
     @staticmethod
-    def from_raw_line(line: str, number: int):
+    def from_raw_line(line: str, tokenizer: SentanceTokenizer):
         # We expect the line to always be ordered, subject, content and maybe mainCat
         def simple_extract_xml_tag(line, tag_name, start_pos):
             start_tag = '<' + tag_name + '>'
@@ -64,4 +63,4 @@ class Document:
         subject, pos = simple_extract_xml_tag(line, 'subject', 0)
         content, pos = simple_extract_xml_tag(line, 'content', pos)
         category, _ = simple_extract_xml_tag(line, 'maincat', pos)
-        return Document(subject=subject, content=content, category=category)
+        return Document(subject=subject, content=content, category=category, tokenizer=tokenizer)

@@ -12,7 +12,7 @@ class Corpus:
             self.__compute_word_to_document_occurrences()
         self.category_to_document_count = self.__compute_category_to_document_count(categories=categories)
         self.__idf = self.__compute_inverse_document_frequency()
-        self.word_types = self.word_to_document_occurrences.keys()
+        self.word_types: List[str] = list(self.word_to_document_occurrences.keys())
         self.word_to_weighted_category: Dict[str, Dict[str, float]] = \
             self.__compute_word_to_weighted_category(categories=categories)
 
