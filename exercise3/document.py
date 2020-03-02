@@ -31,12 +31,12 @@ class Document:
     @staticmethod
     def __cleanup_content(content, tokenizer: SentanceTokenizer):
         # convert &#xd;&lt;br&gt;&lt to html tags
-        unescaped_content = html.unescape(content)
+        unescaped_content = html.unescape(content.lower())
         # after unescaping we can have '\r' in the text without '\n'
         clean_lines = unescaped_content.splitlines()
         # Each line can contain html tags e.g <br>
         if content != unescaped_content:
-            clean_lines = [BeautifulSoup(line, 'lxml').text.lower() for line in clean_lines]
+            clean_lines = [BeautifulSoup(line, 'lxml').text for line in clean_lines]
         # Now tokenize it
         tokenized_sentances = tokenizer.tokenize_sentances(clean_lines)
         return tokenized_sentances

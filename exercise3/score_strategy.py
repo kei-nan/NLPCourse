@@ -8,7 +8,8 @@ from typing import Dict, List, Tuple
 
 class ScoreStrategy(abc.ABC):
     @abc.abstractmethod
-    def __init__(self, corpus: Corpus, **kwargs):
+    def __init__(self, name: str, corpus: Corpus, **kwargs):
+        self.name = name
         self.corpus = corpus
 
     @abc.abstractmethod
@@ -19,7 +20,7 @@ class ScoreStrategy(abc.ABC):
 
 class TfIdfStrategy(ScoreStrategy):
     def __init__(self, **kwargs):
-        super(TfIdfStrategy, self).__init__(**kwargs)
+        super(TfIdfStrategy, self).__init__(name='Tf-IDF', **kwargs)
         self.category_to_document_count = self.__compute_category_to_document_count(categories=self.corpus.categories)
         self.__idf = self.__compute_inverse_document_frequency()
         self.word_to_weighted_category: Dict[str, Dict[str, float]] = \
@@ -88,7 +89,7 @@ class TfIdfStrategy(ScoreStrategy):
 
 class BinaryStrategy(ScoreStrategy):
     def __init__(self, **kwargs):
-        super(BinaryStrategy, self).__init__(**kwargs)
+        super(BinaryStrategy, self).__init__(name='binary', **kwargs)
         self.is_word_in_category: Dict[str, Dict[str, bool]] = self.__calc_is_word_in_category()
 
     def __calc_is_word_in_category(self) -> Dict[str, Dict[str, bool]]:

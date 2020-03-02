@@ -114,6 +114,7 @@ class SentanceTokenizer:
         # Tokenize text
         self.blacklisted_words = set(stopwords.words('english'))
         pattern = string.punctuation + r'\s'
+        pattern = pattern.replace('\'', '')
         self.tokenizer = RegexpTokenizer(r'[{}]+'.format(pattern), gaps=True)
         self.keep_non_english_letters = keep_non_english_letters
         self.keep_spaces = keep_spaces
@@ -133,10 +134,10 @@ class SentanceTokenizer:
                 return character
 
         def translate_token_to_tokens(token):
-            if text_token.isalpha():
+            if token.isalpha():
                 return [token]
-            elif text_token.isalnum():
-                alpha_numeric_tokens = [''.join(x) for _, x in itertools.groupby(text_token, key=str.isdigit)]
+            elif token.isalnum():
+                alpha_numeric_tokens = [''.join(x) for _, x in itertools.groupby(token, key=str.isdigit)]
                 result = []
                 for alpha_numeric_token in alpha_numeric_tokens:
                     if alpha_numeric_token.isalpha():
@@ -145,14 +146,10 @@ class SentanceTokenizer:
                         number_sentance = num2words.num2words(alpha_numeric_token)
                         number_tokens = [word.lower().strip(string.punctuation) for word in number_sentance.split()]
                         result.extend(number_tokens)
-                # if len(result) > 2:
-                #     print(f'Alpha numeric: {result}')
                 return result
             else:
-                cleaned_text_token = ''.join([clean_char(c) for c in text_token])
-                #if text_token != cleaned_text_token:
-                #    print(f'{text_token} -> {cleaned_text_token}')
-                return [cleaned_text_token]
+                cleaned_token = ''.join([clean_char(c) for c in token])
+                return [cleaned_token]
 
         tokens = []
 
@@ -177,10 +174,6 @@ class SentanceTokenizer:
             text_tokens = translate_token_to_tokens(text_token)
             for token in text_tokens:
                 append_token(token)
-        #         if text_token not in self.english_words and appended_token not in self.english_words:
-        #             non_english_words.append(text_token)
-        # if len(non_english_words) > 0:
-        #     print(f'Tokens: {tokens}, non english words: {non_english_words}')
         return tokens
 
     def tokenize_sentances(self, lines):

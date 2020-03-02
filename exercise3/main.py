@@ -5,7 +5,7 @@ import argparse
 import logging
 import random
 
-from exercise3.classifiers import OneNearestNeighbor, NaiveBayes
+from exercise3.classifiers import OneNearestNeighbor, NaiveBayes, Maxent
 from exercise3.document import Document
 from exercise3.corpus import Corpus
 from exercise3.score_strategy import TfIdfStrategy, BinaryStrategy
@@ -32,6 +32,35 @@ def documents_from_lines(lines: List[str], tokenizer: SentanceTokenizer) -> List
     return documents
 
 
+def run_once(train_lines: List[str],
+             classify_lines: List[str],
+             categories: List[str],
+             split_factor: int,
+             tokenizer_settings: Dict[str, bool]) -> Dict[str, float]:
+    train_lines_for_run = train_lines
+    if classify_lines is None:
+        random.shuffle(train_lines)
+        split_marker = int(len(train_lines) * split_factor)
+        classify_lines = train_lines[split_marker:]
+        train_lines_for_run = train_lines[:split_marker]
+
+    tokenizer = SentanceTokenizer(**tokenizer_settings)
+
+    train_documents = documents_from_lines(train_lines_for_run, tokenizer)
+    classify_documents = documents_from_lines(classify_lines, tokenizer)
+
+    results = {}
+    corpus = Corpus(train_documents, categories)
+    first = OneNearestNeighbor(score_strategy=TfIdfStrategy(corpus=corpus))
+    second = OneNearestNeighbor(score_strategy=BinaryStrategy(corpus=corpus))
+    third = NaiveBayes(corpus=corpus)
+    fourth = Maxent(corpus=corpus)
+    for classifier in [first, second, third, fourth]:
+        accuracy = classifier.classify_all(classify_documents)
+        results[classifier.name] = accuracy
+    return accuracy
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train',
@@ -49,56 +78,35 @@ def main():
     with open(args.categories, 'r') as categories_file:
         categories = [category.strip() for category in categories_file.readlines()]
     train_lines = lines_from_file(args.train)
-
-    # random.shuffle(train_lines)
-
-    split_factor = None
-    if not args.use_train_other_half:
-        classify_lines = lines_from_file(args.classify)
-    else:
-        split_factor = 0.8
-        split_marker = int(len(train_lines) * split_factor)
-        classify_lines = train_lines[split_marker:]
-        train_lines = train_lines[:split_marker]
-
+    classify_lines = None if args.use_train_other_half else lines_from_file(args.classify)
     tokenizer_settings = {"keep_non_english_letters": False,
                           "keep_numbers": False,
                           "keep_spaces": False,
-                          "stemming": True}
+                          "stemming": False}
 
-    tokenizer = SentanceTokenizer(**tokenizer_settings)
-
-    train_documents = documents_from_lines(train_lines, tokenizer)
-    classify_documents = documents_from_lines(classify_lines, tokenizer)
-
+    split_factor = 0.8
     split_factor_text = f', split factor: {split_factor}' if split_factor else ''
-    print(f'Settings: {tokenizer_settings}{split_factor_text}')
-    corpus = Corpus(train_documents, categories)
-    first = OneNearestNeighbor(score_strategy=TfIdfStrategy(corpus=corpus))
-    second = OneNearestNeighbor(score_strategy=BinaryStrategy(corpus=corpus))
-    for classifier in [first, second, NaiveBayes(corpus)]:
-        accuracy = classifier.classify_all(classify_documents)
-        print(f'Accuracy: {accuracy}')
-        classifier.show_most_informative_features(10)
-
-    # first = SentanceTokenizer(keep_non_english_letters=False,
-    #                           keep_numbers=True,
-    #                           keep_spaces=False,
-    #                           stemming=True)
-    # second = SentanceTokenizer(keep_non_english_letters=False,
-    #                            keep_numbers=False,
-    #                            keep_spaces=False,
-    #                            stemming=True)
-    #
-    # first_results, first_classify = create_corpus(categories, train_lines, classify_lines, first)
-    # print('First Results: {}'.format(check_run_accuracy(first_results, first_classify)))
-    # second_results, second_classify = create_corpus(categories, train_lines, classify_lines, second)
-    # print('Second Results: {}'.format(check_run_accuracy(second_results, second_classify)))
-    # for index, category in enumerate(first_results):
-    #     other_category = second_results[index]
-    #     if category != other_category:
-    #         print('{}!={}'.format(category, other_category))
-    #         print('Mismatch in line #{}: {}, vs: {}'.format(index, first_classify[index], second_classify[index]))
+    for settings_mask in range(2^len(tokenizer_settings)):
+        settings = {}
+        for index, key in enumerate(tokenizer_settings.keys()):
+            settings[key] = (1 << index) & settings_mask
+        print(f'Settings: {tokenizer_settings}{split_factor_text}')
+        results = {}
+        iteration_count = 100 if classify_lines is None else 1
+        for iteration in range(iteration_count):
+            result = run_once(train_lines=train_lines,
+                              classify_lines=classify_lines,
+                              categories=categories,
+                              split_factor=split_factor,
+                              tokenizer_settings=settings)
+            if iteration == 0:
+                results == result
+            else:
+                for key, value in result.items():
+                    results[key] += value
+        for key, value_sum in results.items():
+            avg_value = value_sum / iteration_count
+            print(f'{key} Average Accuracy: {avg_value}')
 
 
 if __name__ == '__main__':

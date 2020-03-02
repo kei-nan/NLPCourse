@@ -10,6 +10,9 @@ from nltk import NaiveBayesClassifier, MaxentClassifier, corpus
 
 
 class Classifier(abc.ABC):
+    def __init__(self, name):
+        self.name = name
+        
     @abc.abstractmethod
     def classify_all(self, documents: List[Document]) -> List[str]:
         pass
@@ -20,6 +23,7 @@ class Classifier(abc.ABC):
 
 class OneNearestNeighbor(Classifier):
     def __init__(self, score_strategy: ScoreStrategy, **kwargs):
+        super(OneNearestNeighbor, self).__init__(name='1NearestNeighbor({})'.format(score_strategy.name), **kwargs)
         self.corpus = score_strategy.corpus
         self.score_strategy = score_strategy
 
@@ -64,7 +68,8 @@ class NltkClassifier(Classifier):
             return document_features(document, word_types), document.category
         return [make_feature(d, self.most_frequent_words) for d in documents]
 
-    def __init__(self, corpus: Corpus, **kwargs):
+    def __init__(self, name: str, corpus: Corpus, **kwargs):
+        super(NltkClassifier, self).__init__(name=name)
         self.corpus = corpus
         sorted_words_by_occurences = sorted(self.corpus.word_to_document_occurrences.items(),
                                             key=lambda x: len(x[1]),
@@ -83,11 +88,17 @@ class NltkClassifier(Classifier):
 
 
 class NaiveBayes(NltkClassifier, nltk_classifier=nltk.NaiveBayesClassifier):
+    def __init__(self, **kwargs):
+        super(NaiveBayes, self).__init__(name='Naive Bayes', **kwargs)
+
     def show_most_informative_features(self, number):
         self.classifier.show_most_informative_features(number)
 
 
 # http://www.nltk.org/api/nltk.classify.html?highlight=naivebayesclassifier
-class MaxentClassifier(NltkClassifier, nltk_classifier=MaxentClassifier):
+class Maxent(NltkClassifier, nltk_classifier=MaxentClassifier):
+    def __init__(self, **kwargs):
+        super(Maxent, self).__init__(name='Maxent', **kwargs)
+
     def show_most_informative_features(self, number):
         pass
