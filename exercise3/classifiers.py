@@ -1,7 +1,6 @@
 import abc
 import math
 import nltk
-import numpy
 from typing import List, Tuple, Dict
 from exercise3.corpus import Corpus
 from exercise3.document import Document
@@ -35,12 +34,16 @@ class OneNearestNeighbor(Classifier):
                 success += 1
         return success / len(documents)
 
+    @staticmethod
+    def __calc_distance(left, right):
+        return math.sqrt(sum((px - qx) ** 2.0 for px, qx in zip(left, right)))
+
     def classify(self, document: Document) -> str:
         document_scoring, category_scoring = self.score_strategy.score_document(document)
         nearest_category = None
         min_distance = None
         for category, weights in category_scoring.items():
-            distance = math.dist(weights, document_scoring)
+            distance = OneNearestNeighbor.__calc_distance(weights, document_scoring)
             if min_distance is None or distance < min_distance:
                 min_distance = distance
                 nearest_category = category

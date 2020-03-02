@@ -54,11 +54,11 @@ def run_once(train_lines: List[str],
     first = OneNearestNeighbor(score_strategy=TfIdfStrategy(corpus=corpus))
     second = OneNearestNeighbor(score_strategy=BinaryStrategy(corpus=corpus))
     third = NaiveBayes(corpus=corpus)
-    fourth = Maxent(corpus=corpus)
-    for classifier in [first, second, third, fourth]:
+    # fourth = Maxent(corpus=corpus)
+    for classifier in [first, second, third]:
         accuracy = classifier.classify_all(classify_documents)
         results[classifier.name] = accuracy
-    return accuracy
+    return results
 
 
 def main():
@@ -92,15 +92,16 @@ def main():
             settings[key] = (1 << index) & settings_mask
         print(f'Settings: {tokenizer_settings}{split_factor_text}')
         results = {}
-        iteration_count = 100 if classify_lines is None else 1
+        iteration_count = 10 if classify_lines is None else 1
         for iteration in range(iteration_count):
+            print(f'{iteration+1}/{iteration_count}', end='\r')
             result = run_once(train_lines=train_lines,
                               classify_lines=classify_lines,
                               categories=categories,
                               split_factor=split_factor,
                               tokenizer_settings=settings)
             if iteration == 0:
-                results == result
+                results = result
             else:
                 for key, value in result.items():
                     results[key] += value
