@@ -86,7 +86,7 @@ def main():
 
     split_factor = 0.8
     split_factor_text = f', split factor: {split_factor}' if split_factor else ''
-    for settings_mask in range(2^len(tokenizer_settings)):
+    for settings_mask in range(2**len(tokenizer_settings)):
         settings = {}
         for index, key in enumerate(tokenizer_settings.keys()):
             settings[key] = (1 << index) & settings_mask
