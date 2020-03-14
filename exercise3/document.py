@@ -10,13 +10,23 @@ class Document:
         self.category: str = category
         self.content: str = content if content else ''
         subject_and_content: str = self.subject + '\n' + self.content
-        self.subject_and_content: str = self.__cleanup_content(subject_and_content, tokenizer)
+        self.subject_and_content: List[List[str]] = self.__cleanup_content(subject_and_content, tokenizer)
         self.word_to_word_count: Dict[str, Document.WordCount] = self.__count_words()
+        self.number_of_words = self.__calc_number_of_words()
 
     class WordCount:
         def __init__(self, document, count):
             self.document = document
             self.count = count
+
+    def has_only_subject(self):
+        return self.content == ''
+
+    def __calc_number_of_words(self):
+        number_of_words = 0
+        for word, word_count in self.word_to_word_count.items():
+            number_of_words += word_count.count
+        return number_of_words
 
     def __count_words(self, count_threshold=0):
         word_count: Dict[str, Document.WordCount] = {}

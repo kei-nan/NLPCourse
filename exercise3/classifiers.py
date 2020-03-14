@@ -1,6 +1,7 @@
 import abc
 import math
 import nltk
+from bisect import bisect_left
 from typing import List, Tuple, Dict
 from exercise3.corpus import Corpus
 from exercise3.document import Document
@@ -28,11 +29,7 @@ class OneNearestNeighbor(Classifier):
 
     def classify_all(self, documents: List[Document]) -> List[str]:
         classify_results = [self.classify(document) for document in documents]
-        success = 0
-        for index, document in enumerate(documents):
-            if document.category and classify_results[index] == document.category:
-                success += 1
-        return success / len(documents)
+        return classify_results
 
     @staticmethod
     def __calc_distance(left, right):
@@ -65,6 +62,10 @@ class NltkClassifier(Classifier):
             features = {}
             for word in word_types:
                 features[f'contains({word})'] = word in document.word_to_word_count
+            #values = [value for _, value in corpus.sorted_category_avg_word_count]
+            #index = bisect_left(values, document.number_of_words)
+            #closest_category_word_wise = corpus.sorted_category_avg_word_count[index][0]
+            #features['closestCategoryWithWordCount'] = closest_category_word_wise
             return features
 
         def make_feature(document: Document, word_types: List[str]) -> Tuple[dict, str]:
@@ -87,12 +88,13 @@ class NltkClassifier(Classifier):
 
     def classify_all(self, documents: List[Document]):
         test_set = self.__create_feature_set(documents)
-        return nltk.classify.accuracy(self.classifier, test_set)
+        results = self.classifier.classify_many([fs for (fs, l) in test_set])
+        return results
 
 
 class NaiveBayes(NltkClassifier, nltk_classifier=nltk.NaiveBayesClassifier):
     def __init__(self, **kwargs):
-        super(NaiveBayes, self).__init__(name='Naive Bayes', **kwargs)
+        super(NaiveBayes, self).__init__(name='NaiveBayes', **kwargs)
 
     def show_most_informative_features(self, number):
         self.classifier.show_most_informative_features(number)

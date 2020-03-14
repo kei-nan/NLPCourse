@@ -1,6 +1,5 @@
 import nltk
 import os
-import html
 import argparse
 import logging
 import random
@@ -36,10 +35,10 @@ def run_once(train_lines: List[str],
              classify_lines: List[str],
              categories: List[str],
              split_factor: int,
-             tokenizer_settings: Dict[str, bool]) -> Dict[str, float]:
+             tokenizer_settings: Dict[str, bool]) -> Dict[str, List[str]]:
     train_lines_for_run = train_lines
     if classify_lines is None:
-        random.shuffle(train_lines)
+        # random.shuffle(train_lines)
         split_marker = int(len(train_lines) * split_factor)
         classify_lines = train_lines[split_marker:]
         train_lines_for_run = train_lines[:split_marker]
@@ -51,14 +50,16 @@ def run_once(train_lines: List[str],
 
     results = {}
     corpus = Corpus(train_documents, categories)
+    corpus.print_statisitcs_as_csv()
     first = OneNearestNeighbor(score_strategy=TfIdfStrategy(corpus=corpus))
-    second = OneNearestNeighbor(score_strategy=BinaryStrategy(corpus=corpus))
-    third = NaiveBayes(corpus=corpus)
+    second = NaiveBayes(corpus=corpus)
+    # third = OneNearestNeighbor(score_strategy=BinaryStrategy(corpus=corpus))
     # fourth = Maxent(corpus=corpus)
-    for classifier in [first, second, third]:
-        accuracy = classifier.classify_all(classify_documents)
-        results[classifier.name] = accuracy
-    return results
+    for classifier in [first, second]:
+        classifier_results = classifier.classify_all(classify_documents)
+        results[classifier.name] = classifier_results
+        classifier.show_most_informative_features(10)
+    return classify_documents, results
 
 
 def main():
@@ -86,28 +87,44 @@ def main():
 
     split_factor = 0.8
     split_factor_text = f', split factor: {split_factor}' if split_factor else ''
-    for settings_mask in range(2**len(tokenizer_settings)):
+    # max_mask = 2**len(tokenizer_settings)
+    max_mask = 2
+    for settings_mask in range(1, max_mask):
         settings = {}
         for index, key in enumerate(tokenizer_settings.keys()):
-            settings[key] = (1 << index) & settings_mask
-        print(f'Settings: {tokenizer_settings}{split_factor_text}')
+            bit = (1 << index)
+            settings[key] = (bit & settings_mask) == bit
+        print(f'Settings: {settings}{split_factor_text}')
         results = {}
-        iteration_count = 10 if classify_lines is None else 1
+        iteration_count = 1 if classify_lines is None else 1
         for iteration in range(iteration_count):
             print(f'{iteration+1}/{iteration_count}', end='\r')
-            result = run_once(train_lines=train_lines,
-                              classify_lines=classify_lines,
-                              categories=categories,
-                              split_factor=split_factor,
-                              tokenizer_settings=settings)
-            if iteration == 0:
-                results = result
-            else:
-                for key, value in result.items():
-                    results[key] += value
-        for key, value_sum in results.items():
-            avg_value = value_sum / iteration_count
-            print(f'{key} Average Accuracy: {avg_value}')
+            classify_documents, results = run_once(train_lines=train_lines,
+                                                   classify_lines=classify_lines,
+                                                   categories=categories,
+                                                   split_factor=split_factor,
+                                                   tokenizer_settings=settings)
+            classifier_to_accuracy = {}
+            for classifier_name, classifier_results in results.items():
+                success = 0
+                content = ''
+                for index, classified in enumerate(classifier_results):
+                    content += classified + '\n'
+                    expected = classify_documents[index].category
+                    if expected is not None and expected == classified:
+                        success += 1
+                with open(f'{classifier_name}-{iteration}.txt', 'w') as output:
+                    output.write(content)
+                classifier_to_accuracy[classifier_name] = success / len(classifier_results) * 100
+            print(f'Wrote iteration {iteration} results, accuracy: {classifier_to_accuracy}')
+        #     if iteration == 0:
+        #         results = result
+        #     else:
+        #         for key, value in result.items():
+        #             results[key] += value
+        # for key, value_sum in results.items():
+        #     avg_value = value_sum / iteration_count
+        #     print(f'{key} Average Accuracy: {avg_value}')
 
 
 if __name__ == '__main__':
