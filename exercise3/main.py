@@ -73,7 +73,7 @@ def main():
                             action='store_true',
                             default=False)
     test_group.add_argument('--classify',
-                            default=os.path.join(os.curdir, 'train_data.txt'))
+                            default=os.path.join(os.curdir, 'test_data.txt'))
     args = parser.parse_args()
 
     with open(args.categories, 'r') as categories_file:
@@ -115,7 +115,8 @@ def main():
                         success += 1
                 with open(f'{classifier_name}-{iteration}.txt', 'w') as output:
                     output.write(content)
-                classifier_to_accuracy[classifier_name] = success / len(classifier_results) * 100
+                if classify_lines is None:
+                    classifier_to_accuracy[classifier_name] = success / len(classifier_results) * 100
             print(f'Wrote iteration {iteration} results, accuracy: {classifier_to_accuracy}')
         #     if iteration == 0:
         #         results = result
