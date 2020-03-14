@@ -71,7 +71,7 @@ def main():
     test_group = parser.add_mutually_exclusive_group()
     test_group.add_argument('--use-train-other-half',
                             action='store_true',
-                            default=True)
+                            default=False)
     test_group.add_argument('--classify',
                             default=os.path.join(os.curdir, 'train_data.txt'))
     args = parser.parse_args()

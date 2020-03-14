@@ -12,8 +12,16 @@ class CategoryStatistics:
     def update(self, document: Document):
         self.word_count += document.number_of_words
         self.document_count += 1
-        self.subject_only_documents += document.has_only_subject()
+        self.subject_only_documents += 1 if document.has_only_subject() else 0
 
+    @staticmethod
+    def get_csv_headers():
+        return ['Frequency', 'Average Length', 'Subject Only Ratio']
+
+    def csv_format(self, total_document_count):
+        return [str(self.document_count / total_document_count),
+                str(self.word_count / self.document_count),
+                str(self.subject_only_documents / self.document_count)]
 
 class Corpus:
     def __init__(self, documents: List[Document], categories: List[str]):
@@ -34,20 +42,16 @@ class Corpus:
         total_document_count = len(self.documents)
         for category, statistics in self.category_statistics.items():
             frequency_table[category] = statistics.document_count / total_document_count
-        frequency_table = {k: v for k, v in sorted(frequency_table.items(), key=lambda x: x[1], reverse=True)}
-        print('Document Frequencies')
-        print(', '.join(frequency_table.keys()))
-        print(', '.join([str(value) for value in frequency_table.values()]))
-        print('Average Document Length Per Category')
-        keys = [key for key, _ in self.sorted_category_avg_word_count]
-        values = [str(value) for _, value in self.sorted_category_avg_word_count]
-        print(', '.join(keys))
-        print(', '.join(values))
-        percentage_of_subject_only_documents = self.percentage_of_subject_only_documents()
-        print('Percentage Of Subject Only Documents')
-        print(', '.join(percentage_of_subject_only_documents.keys()))
-        print(', '.join([str(value) for value in percentage_of_subject_only_documents.values()]))
         print(f'Word Types: {self.word_type_count()}, Total: {self.total_word_count()}')
+        sorted_categories_by_frequency = [k for k, v in sorted(frequency_table.items(), key=lambda x: x[1], reverse=True)]
+        ranking = 1
+        headers = ['Ranking', 'Name'] + CategoryStatistics.get_csv_headers()
+        print(', '.join(headers))
+        for category in sorted_categories_by_frequency:
+            statistic = self.category_statistics[category]
+            csv_line = [str(ranking), category] + statistic.csv_format(total_document_count)
+            print(', '.join(csv_line))
+            ranking += 1
 
     def word_type_count(self):
         return len(self.word_to_document_occurrences)

@@ -62,10 +62,10 @@ class NltkClassifier(Classifier):
             features = {}
             for word in word_types:
                 features[f'contains({word})'] = word in document.word_to_word_count
-            #values = [value for _, value in corpus.sorted_category_avg_word_count]
-            #index = bisect_left(values, document.number_of_words)
-            #closest_category_word_wise = corpus.sorted_category_avg_word_count[index][0]
-            #features['closestCategoryWithWordCount'] = closest_category_word_wise
+            # values = [value for _, value in self.sorted_category_avg_word_count]
+            # index = min(bisect_left(values, document.number_of_words), len(values) - 1)
+            # closest_category_word_wise = self.sorted_category_avg_word_count[index][0]
+            # features['closestCategoryWithWordCount'] = closest_category_word_wise
             return features
 
         def make_feature(document: Document, word_types: List[str]) -> Tuple[dict, str]:
@@ -80,6 +80,7 @@ class NltkClassifier(Classifier):
                                             reverse=True)
         sorted_words_by_occurences = sorted_words_by_occurences[:NaiveBayes.TOP_WORDS]
         self.most_frequent_words = [k for (k, v) in sorted_words_by_occurences]
+        self.sorted_category_avg_word_count = corpus.sorted_category_avg_word_count
         train_set = self.__create_feature_set(corpus.documents)
         self.classifier = self.classifier_type.train(train_set)
 
